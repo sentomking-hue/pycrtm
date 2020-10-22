@@ -28,7 +28,6 @@ def main( a ):
 
         print("Copying coefficients to {}".format( os.path.join(scriptDir,'crtm_coef_pycrtm') ) )   
         # make the coef directory along with the install location
-        os.makedirs( os.path.join(scriptDir,'crtm_coef_pycrtm') )
 
         # copy coefficients 
         moveCrtmCoefficients( scriptDir  )
@@ -38,7 +37,6 @@ def main( a ):
     else:
         path2CRTM = installPath
         os.chdir( crtmRepos )
-        os.makedirs( os.path.join(scriptDir,'crtm_coef_pycrtm') )
         moveCrtmCoefficients( scriptDir  )
     print("Modifying crtm.cfg")
     modifyOptionsCfg( 'crtm.cfg', scriptDir )
@@ -138,6 +136,9 @@ def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir ):
     runAndCheckProcess(p,"CRTM install", fo, fe, scriptDir)
 
 def moveCrtmCoefficients(installLocation):
+    
+    if( not os.path.isdir(os.path.join( installLocation, 'crtm_coef_pycrtm' ) ) ):
+        os.makedirs( os.path.join( installLocation, 'crtm_coef_pycrtm' ) )
     cwd = os.getcwd()
     p = os.path.join(cwd,'fix','SpcCoeff','Little_Endian')
     for f in os.listdir(p):

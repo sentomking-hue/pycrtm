@@ -675,30 +675,6 @@ END SUBROUTINE wrap_k_matrix
   END IF
   end SUBROUTINE check_and_allocate_globals
 
-  SUBROUTINE applyAvg( Ref_LnPressure, User_LnPressure, Nref, Nuser, Xin, Xout ) 
-    USE ODPS_CoordinateMapping
-    INTEGER,         INTENT(IN) :: Nref, Nuser
-    REAL(KIND=8),   INTENT(IN)     :: Ref_LnPressure(Nref)
-    REAL(KIND=8),   INTENT(IN)     :: User_LnPressure(Nuser)
-    REAL(KIND=8),   INTENT(IN)     :: Xin(Nuser)
-    REAL(KIND=8),   INTENT(OUT)    :: Xout(Nref)
-    !locals   
-    INTEGER      :: k, interp_index(2,Nref)
-    REAL(KIND=8) :: Acc_Weighting(Nuser,Nref)
-
-    !CALL LayerAvg( Ref_LnPressure   , &
-    !               User_LnPressure  , &
-    !               Acc_Weighting    , &
-    !               interp_index)
-
-
-
-    DO k = 1, Nref
-       Xout(k) = SUM(Acc_Weighting(interp_index(1,k):interp_index(2,k), k)  &
-                           * Xin(interp_index(1,k):interp_index(2,k)) )
-    END DO
-  END SUBROUTINE applyAvg
-
   SUBROUTINE aerosols_and_clouds_on(N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
 
   INTEGER, INTENT(OUT) :: N_AEROSOLS_crtm, N_CLOUDS_crtm
