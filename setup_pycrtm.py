@@ -38,6 +38,7 @@ def main( a ):
     else:
         path2CRTM = installPath
         os.chdir( crtmRepos )
+        os.makedirs( os.path.join(scriptDir,'crtm_coef_pycrtm') )
         moveCrtmCoefficients( scriptDir  )
     print("Modifying crtm.cfg")
     modifyOptionsCfg( 'crtm.cfg', scriptDir )
@@ -55,7 +56,7 @@ def main( a ):
     os.environ['DASHL'] = ' -lcrtm -lgomp -lnetcdf -lnetcdff -lhdf5'
     makeModule(fo, fe, scriptDir)
     os.chdir(scriptDir)
-    
+    modifyOptionsCfg( 'crtm.cfg', scriptDir ) 
     fo.close()
     fe.close()
     print("Done!")
