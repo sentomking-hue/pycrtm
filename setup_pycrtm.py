@@ -13,6 +13,7 @@ def main( a ):
     # set the required environment variables
     os.environ["FC"] = compilerFlags[arch]['Compiler']  
     os.environ['FCFLAGS']= compilerFlags[arch]['FCFLAGS1']
+    os.environ['LIBS']="-L {}/lib -lnetcdf -lnetcdff -L {}/lib -lhdf5 -I {}/include -I {}/include ".format(a.ncpath,a.h5path,a.ncpath,a.h5path)
     installPath = a.install
     crtmRepos = a.rtpath
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
@@ -23,9 +24,8 @@ def main( a ):
 
         print("Configuring/Compiling/Installing CRTM.")
         # configure, comile and install CRTM to the installPath
-        configureCompileInstallCrtm( installPath, fo, fe, scriptDir )
-        path2CRTM = glob.glob(os.path.join(installPath,'crtm_v*'))
-
+        configureCompileInstallCrtm( installPath, fo, fe, scriptDir, a.ncpath, a.h5path )
+        path2CRTM = glob.glob(os.path.join(installPath,'crtm_v*'))[0]
         print("Copying coefficients to {}".format( os.path.join(scriptDir,'crtm_coef_pycrtm') ) )   
         # make the coef directory along with the install location
 
@@ -116,7 +116,7 @@ def runAndCheckProcess(p, name, fo, fe, scriptDir):
         sys.exit(name+" failed.")
 
 
-def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir ):
+def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir, ncpath, h5path ):
     # configure as one usually does
     p = Popen(['./configure','--prefix='+installLocation,'--disable-big-endian'],stderr=fe,stdout=fo)
     p.wait()
@@ -134,7 +134,6 @@ def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir ):
     p = Popen(['make','install'],stderr=fe,stdout=fo)
     p.wait()        
     runAndCheckProcess(p,"CRTM install", fo, fe, scriptDir)
-
 def moveCrtmCoefficients(installLocation):
     
     if( not os.path.isdir(os.path.join( installLocation, 'crtm_coef_pycrtm' ) ) ):
