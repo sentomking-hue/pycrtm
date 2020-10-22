@@ -53,8 +53,8 @@ def main(coefficientPath, sensor_id):
         profiles.surfaceTypes[i,3] = h5['waterType'][()]
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
-        storedTb.append(np.asarray(h5['Tb']))
-        storedEmis.append(np.asarray(h5['emissivity_atms']))
+        storedTb.append(np.asarray(h5['Tb_cris']))
+        storedEmis.append(np.asarray(h5['emissivity_cris']))
         h5.close()
 
     crtmOb = pyCRTM()

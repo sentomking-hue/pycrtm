@@ -97,7 +97,6 @@ def main(coefficientPath, sensor_id):
         plt.savefig(os.path.join(thisDir,'atms'+'_emissivity_k.png')) 
         sys.exit("Boo! didn't pass tolerance with CRTM test program.")
 
-
 if __name__ == "__main__":
     pathInfo = configparser.ConfigParser()
     pathInfo.read( os.path.join(parentDir,'crtm.cfg') ) 

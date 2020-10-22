@@ -46,8 +46,8 @@ def main(coefficientPath, sensor_id):
         profiles.surfaceTypes[i,3] = h5['waterType'][()]
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
-        storedTb.append(np.asarray(h5['Tb']))
-        storedEmis.append(np.asarray(h5['emissivity_atms']))
+        storedTb.append(np.asarray(h5['Tb_cris_no_clouds']))
+        storedEmis.append(np.asarray(h5['emissivity_cris_no_clouds']))
         h5.close()
 
     crtmOb = pyCRTM()
@@ -87,6 +87,11 @@ def main(coefficientPath, sensor_id):
         plt.figure()
         plt.plot(wavenumbers.T,kEmissivity.T-np.asarray(storedEmis).T)
         plt.savefig(os.path.join(thisDir,'cris'+'_emissivity_k.png')) 
+
+        #for i,c in enumerate(cases):
+        #    h5 = h5py.File(os.path.join(thisDir,'data',c) , 'r+')
+        #    h5.create_dataset('Tb_cris_no_clouds', data = forwardTb[i,:])
+        #    h5.create_dataset('emissivity_cris_no_clouds', data = forwardEmissivity[i,:])
         sys.exit("Boo! didn't pass tolerance with CRTM test program.")
 
 
