@@ -78,7 +78,7 @@ def selectCompilerFlags(arch):
             sys.exit("F2008 required. gcc >= 6")
         compilerFlags['gfortran-openmp']['FCFLAGS1']="-O3 -fimplicit-none -ffree-form -fno-second-underscore -frecord-marker=4 -funroll-loops -fopenmp -Wall -Wconversion -mieee-fp -fbounds-check -std=f2008"
         compilerFlags['gfortran-openmp']['FCFLAGS2']=""   #mac OS (brew install)
-        compilerFlags['gfortran-openmp']['LDFLAGS']="-Wall -g -shared "
+        compilerFlags['gfortran-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
         compilerFlags['gfortran-openmp']['F2PY_COMPILER']="gnu95"
    
     elif(arch == 'ifort-openmp'):
