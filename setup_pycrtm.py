@@ -5,7 +5,6 @@ from subprocess import Popen, PIPE
 
 
 def main( a ):
-    
     fo = open('pycrtm.stdo','w')
     fe = open('pycrtm.stde','w')
  
@@ -51,6 +50,9 @@ def main( a ):
     os.environ['ILOC'] = path2CRTM
     os.environ['F2PY_COMPILER'] = compilerFlags[arch]['F2PY_COMPILER']
     os.environ['FORT'] = compilerFlags[arch]['Compiler']
+    os.environ['NCINSTALL'] = a.ncpath
+    os.environ['H5INSTALL'] = a.h5path
+    os.environ['DASHL'] = ' -lcrtm -lgomp -lnetcdf -lnetcdff -lhdf5'
     makeModule(fo, fe, scriptDir)
     os.chdir(scriptDir)
     
@@ -125,7 +127,7 @@ def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir ):
     p.wait()
     runAndCheckProcess(p, "Comipling CRTM", fo, fe, scriptDir)
 
-    # skip make check copying broken in 2.4 release, I think...
+    # skip make check copying broken in 2.4 alpha release, I think...
     #p = Popen(['make', 'check'],stderr=fe,stdout=fo, shell=True)
     #p.wait()
     #runAndCheckProcess(p,"CRTM check", fo, fe, scriptDir)
@@ -222,8 +224,10 @@ def which(name):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = "install pycrtm, optionally crtm if it isn't built already.")
-    parser.add_argument('--install',help = 'install path.', required = True, dest='install')
-    parser.add_argument('--rtpath',help = 'path to RT tarballs.', required = True, dest='rtpath')
+    parser.add_argument('--install',help = 'install path to compiled CRTM install.', required = True, dest='install')
+    parser.add_argument('--rtpath',help = 'path to CRTM github clone.', required = True, dest='rtpath')
+    parser.add_argument('--ncpath',help = 'path to NETCDF install.', required = True, dest='ncpath')
+    parser.add_argument('--h5path',help = 'path to H5 install.', required = True, dest='h5path')
     parser.add_argument('--jproc',help = 'Number of threads to pass to make.', required = True, dest='jproc')
     parser.add_argument('--arch',help = 'compiler/architecture.', required = False, dest='arch', default='gfortran-openmp')
     parser.add_argument('--inplace', help="Switch installer to use rtpath for previously installed crtm.", dest='rtinstall', action='store_false' )

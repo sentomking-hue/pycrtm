@@ -6,9 +6,16 @@
 #  FCFLAGS -- flags taken for the appropriate compiler (see CRTM "config-setup" directory)
 #  ILOC -- path to the CRTM install directory. 
 #          The install directory where you find  "lib" (where the libcrtm.a lives) and "include" (where all the *.mod files live)
+#  NCINSTALL -- path to NETCDF install directory (above 'lib' and 'include')
+#  H5INSTALL -- path to HDF5 install directory (abvoe 'lib' and 'include')
+#  DASHL -- things like -lcrtm -lgomp -lnetcdf -lnetcdff, etc
   F2PY = f2py --fcompiler=${F2PY_COMPILER} --f90flags='${FCFLAGS}'
-  LIBA = -L${ILOC}/lib #-L /Users/bkarpowi/homebrew/Cellar/netcdf/4.7.4_1/lib -L /Users/bkarpowi/homebrew/Cellar/hdf5/1.12.0_1/lib 
-  INCA = -I${ILOC}/include# -I /Users/bkarpowi/homebrew/Cellar/netcdf/4.7.4_1/include -I /Users/bkarpowi/homebrew/Cellar/hdf5/1.12.0_1/include
+  LIBCRTM= -L${ILOC}/lib 
+  INCCRTM = -I${ILOC}/include
+  LIBNC = -L${NCINSTALL}/lib
+  INCNC = -L${NCINSTALL}/include
+  LIBH5 = -L${H5INSTALL}/lib
+  INCH5 = -L${H5INSTALL}/include
 MODULE=pycrtm
 
 all: ${MODULE}.so
@@ -16,7 +23,7 @@ all: ${MODULE}.so
 #Only really need first bit, if you change interface, but do it anyway so you don't forget.
 ${MODULE}.so: pycrtm.f90
 	f2py -m ${MODULE} -h sgnFile.pyf pycrtm.f90 --overwrite-signature
-	${F2PY} ${F2PY_FLAGS}-c ${LIBA} -lcrtm -lgomp -L/Users/bkarpowi/homebrew/Cellar/netcdf/4.7.4_1/lib -lnetcdf -lnetcdff  -L/Users/bkarpowi/homebrew/Cellar/hdf5/1.12.0_1/lib  -lhdf5 ${INCA} -I/Users/bkarpowi/homebrew/Cellar/netcdf/4.7.4_1/include -I/Users/bkarpowi/homebrew/Cellar/hdf5/1.12.0_1/include -m ${MODULE} $<  only: wrap_forward wrap_k_matrix
+	${F2PY} ${F2PY_FLAGS}-c ${LIBCRTM} ${LIBNC} ${LIBH5} ${INCCRTM} ${INCNC} ${INCH5} ${DASHL} -m ${MODULE} $<  only: wrap_forward wrap_k_matrix
 
 clean:
 	${RM} ${MODULE}*.so
