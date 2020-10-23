@@ -81,10 +81,10 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
   ! ---------
   ! Variables
   ! ---------
-  CHARACTER(256) :: message, version
+  CHARACTER(256) :: version
   INTEGER :: err_stat, alloc_stat
   INTEGER :: n_channels, N_clouds_crtm, N_aerosols_crtm
-  INTEGER :: i, l, m, n, nc, ll,mm, nn, species,i_abs
+  INTEGER :: l, n
   LOGICAL :: cloudsOn, aerosolsOn
 
   ! ============================================================================
@@ -377,10 +377,10 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwa
   ! ---------
   ! Variables
   ! ---------
-  CHARACTER(256) :: message, version
+  CHARACTER(256) :: version
   INTEGER :: err_stat, alloc_stat
   INTEGER :: n_channels, N_aerosols_crtm, N_clouds_crtm
-  INTEGER :: l, m, n, nc, species, i_abs
+  INTEGER :: l, n, i_abs
   LOGICAL :: cloudsOn, aerosolsOn
 
 
