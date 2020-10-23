@@ -43,6 +43,12 @@ def main( a ):
     print("Making python module.")
     # build python module
     # Set compile environment variables.
+    if(arch =='gfortran-openmp'):
+        openmpLink = ' -lgomp'
+    elif(arch =='ifort-openmp'):
+        openmpLink = ' -liomp5'
+    else:
+        openmpLink = ''
     os.environ['FCFLAGS'] = os.environ['FCFLAGS'] + compilerFlags[arch]['FCFLAGS2']
     os.environ['FFLAGS'] = os.environ['FCFLAGS']
     os.environ['FC'] = compilerFlags[arch]['Compiler']
@@ -51,7 +57,7 @@ def main( a ):
     os.environ['FORT'] = compilerFlags[arch]['Compiler']
     os.environ['NCINSTALL'] = a.ncpath
     os.environ['H5INSTALL'] = a.h5path
-    os.environ['DASHL'] = ' -lcrtm -lgomp -lnetcdf -lnetcdff -lhdf5'
+    os.environ['DASHL'] = ' -lcrtm -lnetcdf -lnetcdff -lhdf5' + openmpLink
     makeModule(fo, fe, scriptDir)
     os.chdir(scriptDir)
     modifyOptionsCfg( 'crtm.cfg', scriptDir ) 
