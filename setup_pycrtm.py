@@ -78,8 +78,8 @@ def selectCompilerFlags(arch):
         if ( int(so.decode("utf-8").split('.')[0]) < 6 ):
             sys.exit("F2008 required. gcc >= 6")
         compilerFlags['gfortran-openmp']['FCFLAGS1']="-O3 -fimplicit-none -ffree-form -fno-second-underscore -frecord-marker=4 -funroll-loops -fopenmp -Wall -Wconversion -mieee-fp -fbounds-check -std=f2008 -fPIC"
-        compilerFlags['gfortran-openmp']['FCFLAGS2']=""   #mac OS (brew install)
-        compilerFlags['gfortran-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
+        compilerFlags['gfortran-openmp']['FCFLAGS2']=""   
+        compilerFlags['gfortran-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5 "
         compilerFlags['gfortran-openmp']['F2PY_COMPILER']="gnu95"
    
     elif(arch == 'ifort-openmp'):
@@ -89,8 +89,8 @@ def selectCompilerFlags(arch):
 
         if(fullIfortPath == ''): sys.exit("No ifort found.")
         compilerFlags['ifort-openmp']['FCFLAGS1']="-O3 -fp-model source -e08 -free -qopenmp -assume byterecl,realloc_lhs -fPIC"
-        compilerFlags['ifort-openmp']['FCFLAGS2']=" -fPIC -liomp5 "
-        compilerFlags['ifort-openmp']['LDFLAGS']="-Wall -g -shared -liomp5 -lnetcdf -lnetcdff -lhdf5"
+        compilerFlags['ifort-openmp']['FCFLAGS2']=""
+        compilerFlags['ifort-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
         compilerFlags['ifort-openmp']['F2PY_COMPILER']='intelem'
     else:
         sys.exit('Unknown compiler {}.'.format(arch))   
@@ -117,6 +117,10 @@ def runAndCheckProcess(p, name, fo, fe, scriptDir):
 
 def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir, ncpath, h5path ):
     # configure as one usually does
+    #p = Popen(['make','clean'],stderr=fe,stdout=fo,shell=True)
+    #p.wait()
+    #runAndCheckProcess(p, "Make clean", fo, fe, scriptDir)
+
     p = Popen(['./configure','--prefix='+installLocation,'--disable-big-endian'],stderr=fe,stdout=fo)
     p.wait()
     runAndCheckProcess(p,"CRTM configure", fo, fe, scriptDir)
@@ -125,7 +129,7 @@ def configureCompileInstallCrtm( installLocation, fo, fe, scriptDir, ncpath, h5p
     p.wait()
     runAndCheckProcess(p, "Comipling CRTM", fo, fe, scriptDir)
 
-    # skip make check copying broken in 2.4 alpha release, I think...
+    # skip make check 
     #p = Popen(['make', 'check'],stderr=fe,stdout=fo, shell=True)
     #p.wait()
     #runAndCheckProcess(p,"CRTM check", fo, fe, scriptDir)

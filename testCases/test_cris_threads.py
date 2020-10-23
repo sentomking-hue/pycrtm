@@ -66,7 +66,7 @@ def main(coefficientPath, sensor_id):
     crtmOb.profiles = profiles
     crtmOb.coefficientPath = pathInfo['CRTM']['coeffs_dir']
     crtmOb.sensor_id = sensor_id
-    crtmOb.nThreads = 4
+    crtmOb.nThreads = 10
 
     crtmOb.loadInst()
 
