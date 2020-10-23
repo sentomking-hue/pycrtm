@@ -77,7 +77,7 @@ def selectCompilerFlags(arch):
         so,se = p.communicate() 
         if ( int(so.decode("utf-8").split('.')[0]) < 6 ):
             sys.exit("F2008 required. gcc >= 6")
-        compilerFlags['gfortran-openmp']['FCFLAGS1']="-O3 -fimplicit-none -ffree-form -fno-second-underscore -frecord-marker=4 -funroll-loops -fopenmp -Wall -Wconversion -mieee-fp -fbounds-check -std=f2008"
+        compilerFlags['gfortran-openmp']['FCFLAGS1']="-O3 -fimplicit-none -ffree-form -fno-second-underscore -frecord-marker=4 -funroll-loops -fopenmp -Wall -Wconversion -mieee-fp -fbounds-check -std=f2008 -fPIC"
         compilerFlags['gfortran-openmp']['FCFLAGS2']=""   #mac OS (brew install)
         compilerFlags['gfortran-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
         compilerFlags['gfortran-openmp']['F2PY_COMPILER']="gnu95"
@@ -88,10 +88,9 @@ def selectCompilerFlags(arch):
         fullIfortPath = which('ifort')
 
         if(fullIfortPath == ''): sys.exit("No ifort found.")
-
-        compilerFlags['ifort-openmp']['FCFLAGS1']="-O3 -fp-model source -e08 -free -qopenmp -assume byterecl,realloc_lhs"
-        compilerFlags['ifort-openmp']['FCFLAGS2']=" -liomp5 "
-        compilerFlags['ifort-openmp']['LDFLAGS']="-Wall -g -shared -liomp5"
+        compilerFlags['ifort-openmp']['FCFLAGS1']="-O3 -fp-model source -e08 -free -qopenmp -assume byterecl,realloc_lhs -fPIC"
+        compilerFlags['ifort-openmp']['FCFLAGS2']=" -fPIC -liomp5 "
+        compilerFlags['ifort-openmp']['LDFLAGS']="-Wall -g -shared -liomp5 -lnetcdf -lnetcdff -lhdf5"
         compilerFlags['ifort-openmp']['F2PY_COMPILER']='intelem'
     else:
         sys.exit('Unknown compiler {}.'.format(arch))   
