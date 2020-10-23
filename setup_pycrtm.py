@@ -16,6 +16,7 @@ def main( a ):
     os.environ['LIBS']="-L {}/lib -lnetcdf -lnetcdff -L {}/lib -lhdf5 -I {}/include -I {}/include ".format(a.ncpath,a.h5path,a.ncpath,a.h5path)
     installPath = a.install
     crtmRepos = a.rtpath
+    coefDir = a.coef
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
     # if we want to build crtm first.
     if(a.rtinstall):
@@ -30,14 +31,17 @@ def main( a ):
         # make the coef directory along with the install location
 
         # copy coefficients 
-        moveCrtmCoefficients( scriptDir  )
+        moveCrtmCoefficients( coefDir  )
 
         # go back to script directory.
         os.chdir( scriptDir )
     else:
-        path2CRTM = installPath
         os.chdir( crtmRepos )
-        moveCrtmCoefficients( scriptDir  )
+        with open(os.path.join('libsrc','CRTM_Version.inc'),'r') as f:
+            line = f.readline()
+        crtm_dir = 'crtm_'+line.split()[2]
+        path2CRTM = os.path.join(installPath,crtm_dir)
+        moveCrtmCoefficients( coefDir  )
     print("Modifying crtm.cfg")
     modifyOptionsCfg( 'crtm.cfg', scriptDir )
     print("Making python module.")
@@ -98,6 +102,38 @@ def selectCompilerFlags(arch):
         compilerFlags['ifort-openmp']['FCFLAGS2']=""
         compilerFlags['ifort-openmp']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
         compilerFlags['ifort-openmp']['F2PY_COMPILER']='intelem'
+    elif(arch =='gfortran'):
+        compilerFlags['gfortran']={}
+        compilerFlags['gfortran']['Compiler']='gfortran'
+        fullGfortranPath = which('gfortran')
+        if(fullGfortranPath ==''): sys.exit("No gfortran found in path.")
+
+        gccBinPath = os.path.split(fullGfortranPath)[0]
+        gccPath = os.path.split(gccBinPath)[0]
+
+        # bit to check what gcc version is available, if not > 6. Problem. exit.
+        p = Popen(['gfortran','-dumpversion'], stdout = PIPE, stderr = PIPE) 
+        p.wait()
+        so,se = p.communicate() 
+        if ( int(so.decode("utf-8").split('.')[0]) < 6 ):
+            sys.exit("F2008 required. gcc >= 6")
+        compilerFlags['gfortran']['FCFLAGS1']="-O3 -fimplicit-none -ffree-form -fno-second-underscore -frecord-marker=4 -funroll-loops -Wall -Wconversion -mieee-fp -fbounds-check -std=f2008 -fPIC"
+        compilerFlags['gfortran']['FCFLAGS2']=""   
+        compilerFlags['gfortran']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5 "
+        compilerFlags['gfortran']['F2PY_COMPILER']="gnu95"
+   
+    elif(arch == 'ifort'):
+        compilerFlags['ifort']={}
+        compilerFlags['ifort']['Compiler']='ifort'
+        fullIfortPath = which('ifort')
+
+        if(fullIfortPath == ''): sys.exit("No ifort found.")
+        compilerFlags['ifort']['FCFLAGS1']="-O3 -fp-model source -e08 -free -assume byterecl,realloc_lhs -fPIC"
+        compilerFlags['ifort']['FCFLAGS2']=""
+        compilerFlags['ifort']['LDFLAGS']="-Wall -g -shared -lnetcdf -lnetcdff -lhdf5"
+        compilerFlags['ifort']['F2PY_COMPILER']='intelem'
+
+
     else:
         sys.exit('Unknown compiler {}.'.format(arch))   
     return compilerFlags
@@ -200,6 +236,7 @@ def moveCrtmCoefficients(installLocation):
     for f in os.listdir(p):
         shutil.copy(os.path.join(p,f), os.path.join(installLocation,'crtm_coef_pycrtm'))
 
+
 def makeModule(fo, fe, scriptDir):
     # make pycrtm module
     os.chdir(scriptDir)
@@ -234,8 +271,9 @@ def which(name):
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = "install pycrtm, optionally crtm if it isn't built already.")
-    parser.add_argument('--install',help = 'install path to compiled CRTM install.', required = True, dest='install')
-    parser.add_argument('--rtpath',help = 'path to CRTM github clone.', required = True, dest='rtpath')
+    parser.add_argument('--install',help = 'CRTM install path.', required = True, dest='install')
+    parser.add_argument('--repos',help = 'path to CRTM github clone.', required = True, dest='rtpath')
+    parser.add_argument('--coef',help = 'path to place crtm_coef_pycrtm directory.', required = True, dest='coef')
     parser.add_argument('--ncpath',help = 'path to NETCDF install.', required = True, dest='ncpath')
     parser.add_argument('--h5path',help = 'path to H5 install.', required = True, dest='h5path')
     parser.add_argument('--jproc',help = 'Number of threads to pass to make.', required = True, dest='jproc')
