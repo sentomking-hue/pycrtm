@@ -62,14 +62,14 @@ Following the example the CRTM will be installed here:
 * `$PWD/crtm_coef_pycrtm`                               <-- path to crtm_coefficients
 
 To make things a bit simpler some installer scripts and scripts to load modules on the NASA NCCS discover cluster have been included:
-* discover_install_gfortran_openmp.sh     <-- will install using gfortran and OpenMP if you checkout the CRTM repository at ../REL-2.4.0 
-* discover_install_ifort_openmp.sh        <-- will install using ifort and OpenMP if you checkout the CRTM repository at ../REL-2.4.0
-* discover_modules_gfortran_openmp.sh	    <-- load the necessary modules whenever you want to run pycrtm using gfortran/OpenMP on discover
-* discover_modules_ifort_openmp.sh        <-- load the necessary modules whenever you want to run pycrtm using ifort/OpenMP on discover
+* `discover_install_gfortran_openmp.sh`     <-- will install using gfortran and OpenMP if you checkout the CRTM repository at ../REL-2.4.0 
+* `discover_install_ifort_openmp.sh`        <-- will install using ifort and OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+* `discover_modules_gfortran_openmp.sh`	    <-- load the necessary modules whenever you want to run pycrtm using gfortran/OpenMP on discover
+* `discover_modules_ifort_openmp.sh`        <-- load the necessary modules whenever you want to run pycrtm using ifort/OpenMP on discover
 
 For those on a Mac and use homebrew some installer scripts have been included:
-* homebrew_install.sh                     <-- will install on standard homebrew install using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
-* homebrew_install_userdir.sh             <-- will install on homebrew install configured to run in the user's directory using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+* `homebrew_install.sh`                     <-- will install on standard homebrew install using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+* `homebrew_install_userdir.sh`             <-- will install on homebrew install configured to run in the user's directory using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
 
 ---------------------------------------------------------------------------------------- 
 
