@@ -31,10 +31,10 @@ the following arguments are required: --install, --repos, --coef, --ncpath, --h5
 
 ### Required:
 * `--install` -  Install path to crtm library or where the user would like the crtm install directory (e.g., /home/user/ if you want crtm_v2.4.0 to install in /home/user/crtm_v2.4.0)
-*  --repos`   -  Path to CRTM git checkout (e.g. REL-2.4.0) 
-*  --coef`    -  Path where the crtm coefficients are stored under subdirectory crtm_coef_pycrtm
-*  --ncpath   -  Path to netcdf library (root path e.g. /usr/local/Cellar/netcdf/4.7.4_1, where lib and include are subdirectories underneath) 
-*  --h5path   -  Path to hdf5 library (root path e.g. /usr/local/Cellar/hdf5/1.12.0_1,, where lib and include are subdirectories underneath) 
+* `--repos`   -  Path to CRTM git checkout (e.g. REL-2.4.0) 
+* `--coef`    -  Path where the crtm coefficients are stored under subdirectory crtm_coef_pycrtm
+* `--ncpath`   -  Path to netcdf library (root path e.g. /usr/local/Cellar/netcdf/4.7.4_1, where lib and include are subdirectories underneath) 
+* `--h5path`   -  Path to hdf5 library (root path e.g. /usr/local/Cellar/hdf5/1.12.0_1,, where lib and include are subdirectories underneath) 
 * `--jproc`   -  The number of threads to pass compiler
 
 ### Optional:
