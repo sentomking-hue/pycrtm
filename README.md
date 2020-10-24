@@ -1,12 +1,11 @@
 # pyCRTM - python interface to CRTM.
 
-## Bryan M. Karpowicz, Ph.D. - USRA/GESTAR/NASA 610.1 Global Modeling and Assimilation Office
+## Bryan M. Karpowicz, Ph.D. - USRA/GESTAR/NASA 610.1 Global Modeling and Assimilation Office, with Contributions from Patrick Stegmann, Dr.-Ing. - JCSDA
 
-This is a basic python interface to CRTM v2.3.0. I think it will generally serve my purposes and probably the purposes of other researchers needing a quick python accessible RT model.
+This is a basic python interface to CRTM v2.4.0. 
 
 The user interface is designed to be very similar to the python RTTOV interface. So, the user sets profiles, passes them to an object for a desired sensor, runs either the forward model/K-matrix, and pulls the brightness temperature/Jacobian/transmission/emissivity out of the object.  
 
-The user interface shouldn't change all that much, and hopefully won't get too broken if/when features are added.  
 
 This `README` has 4 parts:
 
@@ -15,7 +14,7 @@ This `README` has 4 parts:
 3. Python path etc -- how to use this library in a project.
 4. Using the interface -- HOWTO/run through on how to use this interface
 
-- Bryan Karpowicz -- August 16, 2019
+- Bryan Karpowicz -- October 23, 2020
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
@@ -45,12 +44,15 @@ the following arguments are required: --install, --repos, --coef, --ncpath, --h5
 
 Example to install CRTM in this directory under a subdirectory under the CRTM git checkout, and place the coefficients in this diectory`:
 ```
-./setup_pycrtm.py  --install $PWD/../REL-2.4.0/ --rtpath $PWD/../REL-2.4.0 --jproc 1 --coef $PWD --ncpath /usr/local/Cellar/netcdf/4.7.4_1 --h5path /usr/local/Cellar/hdf5/1.12.0_1 --arch gfortran-openmp
+./setup_pycrtm.py  --install $PWD/../REL-2.4.0/ --repos $PWD/../REL-2.4.0 --jproc 1 --coef $PWD --ncpath /usr/local/Cellar/netcdf/4.7.4_1 --h5path /usr/local/Cellar/hdf5/1.12.0_1 --arch gfortran-openmp
 ```
 Once completed:
 
 * `$PWD/pycrtm.cpython-37m-PLATFORM.so` <-- (will always reside here) f2py interface compiled by setup 
 * `$PWD/crtm.cfg`                       <-- Path where the CRTM coefficients are stored 
+* `$PWD/pycrtm.stde`                    <-- standard error captured from compilation
+* `$PWD/pycrtm.stdo`                    <-- standard output captured from compilation 
+* `$PWD/sgnFile.pyf`                    <-- automatically generated f2py interface file
 
 Following the example the CRTM will be installed here:
 
@@ -58,6 +60,17 @@ Following the example the CRTM will be installed here:
 * `$PWD/../REL-2.4.0/crtm_v2.4.0/include`               <-- path to all compiled fortran modules
 * `$PWD/../REL-2.4.0/crtm_v2.4.0/lib/libcrtm.a`         <-- usual crtm static library
 * `$PWD/crtm_coef_pycrtm`                               <-- path to crtm_coefficients
+
+To make things a bit simpler some installer scripts and scripts to load modules on the NASA NCCS discover cluster have been included:
+discover_install_gfortran_openmp.sh     <-- will install using gfortran and OpenMP if you checkout the CRTM repository at ../REL-2.4.0 
+discover_install_ifort_openmp.sh        <-- will install using ifort and OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+discover_modules_gfortran_openmp.sh	    <-- load the necessary modules whenever you want to run pycrtm using gfortran/OpenMP on discover
+discover_modules_ifort_openmp.sh        <-- load the necessary modules whenever you want to run pycrtm using ifort/OpenMP on discover
+
+For those on a Mac and use homebrew some installer scripts have been included:
+homebrew_install.sh                     <-- will install on standard homebrew install using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+homebrew_install_userdir.sh             <-- will install on homebrew install configured to run in the user's directory using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
+
 ---------------------------------------------------------------------------------------- 
 
 ## 2. Tests/Examples:
