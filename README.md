@@ -34,7 +34,7 @@ the following arguments are required: --install, --repos, --coef, --ncpath, --h5
 * `--repos`   -  Path to CRTM git checkout (e.g. REL-2.4.0) 
 * `--coef`    -  Path where the crtm coefficients are stored under subdirectory crtm_coef_pycrtm
 * `--ncpath`   -  Path to netcdf library (root path e.g. /usr/local/Cellar/netcdf/4.7.4_1, where lib and include are subdirectories underneath) 
-* `--h5path`   -  Path to hdf5 library (root path e.g. /usr/local/Cellar/hdf5/1.12.0_1,, where lib and include are subdirectories underneath) 
+* `--h5path`   -  Path to hdf5 library (root path e.g. /usr/local/Cellar/hdf5/1.12.0_1, where lib and include are subdirectories underneath) 
 * `--jproc`   -  The number of threads to pass compiler
 
 ### Optional:
@@ -92,7 +92,7 @@ The following scripts will run CRTM without aerosols or clouds:
 * `$PWD/testCases/test_cris_no_clouds.py`
 
 For those Jupyter notebook fans, there is even Jupyter notebook example simulating ATMS:
-* $PWD/testCases/test_atms.ipynb
+* `$PWD/testCases/test_atms.ipynb`
 
 ## 3. Python path etc - needs work, but works for me at the moment: 
 
