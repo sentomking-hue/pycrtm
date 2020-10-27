@@ -67,6 +67,16 @@ To make things a bit simpler some installer scripts and scripts to load modules 
 * `discover_modules_gfortran_openmp.sh`	    <-- load the necessary modules whenever you want to run pycrtm using gfortran/OpenMP on discover
 * `discover_modules_ifort_openmp.sh`        <-- load the necessary modules whenever you want to run pycrtm using ifort/OpenMP on discover
 
+Note you will have to add the following to your .basrc (if you use bash):
+```bash
+export OPT='/discover/swdev/jcsda/modules'
+module use $OPT/modulefiles
+```
+If you use cshell you will need to add the following lines to your .cshrc:
+```csh
+setenv OPT /discover/swdev/jcsda/modules
+module use $OPT/modulefiles
+```
 For those on a Mac and use homebrew some installer scripts have been included:
 * `homebrew_install.sh`                     <-- will install on standard homebrew install using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
 * `homebrew_install_userdir.sh`             <-- will install on homebrew install configured to run in the user's directory using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
