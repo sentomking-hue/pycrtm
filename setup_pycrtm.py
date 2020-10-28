@@ -18,15 +18,20 @@ def main( a ):
     crtmRepos = a.rtpath
     coefDir = a.coef
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
+    os.chdir( crtmRepos )
+    # get installed/to be installed crtm path based on repository version. 
+    with open(os.path.join('libsrc','CRTM_Version.inc'),'r') as f:
+        line = f.readline()
+        crtm_dir = 'crtm_'+line.split()[2]
+        path2CRTM = os.path.join(installPath,crtm_dir)
+
     # if we want to build crtm first.
     if(a.rtinstall):
         # go into crtm git repository directory
-        os.chdir( crtmRepos ) 
 
         print("Configuring/Compiling/Installing CRTM.")
         # configure, comile and install CRTM to the installPath
         configureCompileInstallCrtm( installPath, fo, fe, scriptDir, a.ncpath, a.h5path )
-        path2CRTM = glob.glob(os.path.join(installPath,'crtm_v*'))[0]
         print("Copying coefficients to {}".format( os.path.join(scriptDir,'crtm_coef_pycrtm') ) )   
         # make the coef directory along with the install location
 
@@ -37,11 +42,11 @@ def main( a ):
         os.chdir( scriptDir )
     else:
         os.chdir( crtmRepos )
-        with open(os.path.join('libsrc','CRTM_Version.inc'),'r') as f:
-            line = f.readline()
-        crtm_dir = 'crtm_'+line.split()[2]
-        path2CRTM = os.path.join(installPath,crtm_dir)
+        print("Copying coefficients to {}".format( os.path.join(scriptDir,'crtm_coef_pycrtm') ) )   
         moveCrtmCoefficients( coefDir  )
+        # go back to script directory.
+        os.chdir( scriptDir )
+
     print("Modifying crtm.cfg")
     modifyOptionsCfg( 'crtm.cfg', scriptDir )
     print("Making python module.")
