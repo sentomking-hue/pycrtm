@@ -218,7 +218,7 @@ class pyCRTM:
                                        self.profiles.surfaceTemperatures, 
                                        self.profiles.surfaceFractions, 
                                        self.profiles.LAI, 
-                                       self.profiles.S2m[:,1], 
+                                       self.profiles.Skin[:,1], 
                                        self.profiles.windSpeed10m, 
                                        self.profiles.windDirection10m,
                                        self.profiles.surfaceTypes[:,0], 
@@ -276,7 +276,7 @@ class pyCRTM:
                                                                                                                                          self.profiles.surfaceTemperatures, 
                                                                                                                                          self.profiles.surfaceFractions, 
                                                                                                                                          self.profiles.LAI, 
-                                                                                                                                         self.profiles.S2m[:,1], 
+                                                                                                                                         self.profiles.Skin[:,1], 
                                                                                                                                          self.profiles.windSpeed10m, 
                                                                                                                                          self.profiles.windDirection10m,
                                                                                                                                          self.profiles.surfaceTypes[:,0], 
@@ -341,7 +341,7 @@ if __name__ == "__main__":
         profiles.climatology[i] = h5['climatology'][()]
         profiles.surfaceFractions[i,:] = h5['surfaceFractions']
         profiles.surfaceTemperatures[i,:] = h5['surfaceTemperatures']
-        profiles.S2m[i,1] = 33.0 # just use salinity out of S2m for the moment.
+        profiles.Skin[i,1] = 33.0 # just use salinity out of Skin for the moment.
         profiles.windSpeed10m[i] = 5.0
         profiles.windDirection10m[i] = h5['windDirection10m'][()]
         # land, soil, veg, water, snow, ice
