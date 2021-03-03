@@ -61,10 +61,8 @@ def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=
     p['Pi'] = np.nan*np.ones([nProfiles, nLevels+1])
     # satzen, sataz, sunzen, sunaz, scanangle
     p['Angles'] = np.nan*np.ones([nProfiles, 5])
-    # P (2meter), T (2meter), Q (2meter), U(10meter), V(10meter), fetch 
-    p['S2m'] = np.nan*np.ones([nProfiles,6])
-    # skin T, salinity, snow_fraction, foam_fraction, fastem coef 1:5
-    p['Skin'] = np.nan*np.zeros([nProfiles,10])
+    # Salinity (PSU)
+    p['Salinity'] = np.nan*np.zeros([nProfiles])
     # surftype, water type
     p['SurfType'] = np.nan*np.zeros([nProfiles,2])
     # latitude, longitude, elevation 
@@ -218,7 +216,7 @@ class pyCRTM:
                                        self.profiles.surfaceTemperatures, 
                                        self.profiles.surfaceFractions, 
                                        self.profiles.LAI, 
-                                       self.profiles.Skin[:,1], 
+                                       self.profiles.Salinity, 
                                        self.profiles.windSpeed10m, 
                                        self.profiles.windDirection10m,
                                        self.profiles.surfaceTypes[:,0], 
@@ -276,7 +274,7 @@ class pyCRTM:
                                                                                                                                          self.profiles.surfaceTemperatures, 
                                                                                                                                          self.profiles.surfaceFractions, 
                                                                                                                                          self.profiles.LAI, 
-                                                                                                                                         self.profiles.Skin[:,1], 
+                                                                                                                                         self.profiles.Salinity, 
                                                                                                                                          self.profiles.windSpeed10m, 
                                                                                                                                          self.profiles.windDirection10m,
                                                                                                                                          self.profiles.surfaceTypes[:,0], 
@@ -341,7 +339,7 @@ if __name__ == "__main__":
         profiles.climatology[i] = h5['climatology'][()]
         profiles.surfaceFractions[i,:] = h5['surfaceFractions']
         profiles.surfaceTemperatures[i,:] = h5['surfaceTemperatures']
-        profiles.Skin[i,1] = 33.0 # just use salinity out of Skin for the moment.
+        profiles.Salinity[i,1] = 33.0 
         profiles.windSpeed10m[i] = 5.0
         profiles.windDirection10m[i] = h5['windDirection10m'][()]
         # land, soil, veg, water, snow, ice
