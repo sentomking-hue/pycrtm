@@ -638,7 +638,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwa
 
   IF (output_tb_flag) THEN
     DO n=1,N_profiles
-      print *,'profile',n
       outTb(n,:) = rts(:,n)%Brightness_Temperature
     END DO
   ELSE
