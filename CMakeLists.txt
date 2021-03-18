@@ -12,30 +12,50 @@ include_directories(${_Python3_NumPy_INCLUDE_DIR})
 include_directories(${NetCDF_INCLUDE_DIRS})
 #set(crtm_INCLUDE "/discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm_v2.4.0/module/crtm/GNU/9.2.0/")
 #set(crtm_LIB "/discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm_v2.4.0/lib/")
-
 set(crtm_INCLUDE "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/include")
 set(crtm_LIB "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/lib")
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.f90")
 set(f2py_module_name "pycrtm")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
+add_compile_options("-lcrtm")
+link_libraries("-lcrtm")
+add_compile_options("-lnetcdf")
+link_libraries("-lnetcdf")
+add_compile_options("-lnetcdff")
+link_libraries("-lnetcdff")
+
 add_custom_target(${f2py_module_name} ALL
   DEPENDS ${generated_module_file}
   )
+set(CDF_PATH "")
+get_filename_component(CDF_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
+
+#set(CMAKE_INSTALL_RPATH ${crtm_LIB})
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#set(CMAKE_INSTALL_RPATH ${CDF_PATH})
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+#list(GET NetCDF_LIBRARIES 0 c_cdf)
+#list(GET NetCDF_LIBRARIES 2 f_cdf)
 
 add_custom_command(
   OUTPUT ${generated_module_file}
   COMMAND ${F2PY_EXECUTABLE}
-    -m ${generated_module_file}
-    -h sgnFile.pyf ${fortran_src_file}
+    -m ${f2py_module_name}
+    -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
     --overwrite-signature
   COMMAND ${F2PY_EXECUTABLE}
     -m ${f2py_module_name}
-    -c 
+    -c
+    ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
     ${fortran_src_file}
-    -L${crtm_LIB}
     -I${crtm_INCLUDE}
-    -L${NetCDF_Fortran_LIBRARY}
     -I${NetCDF_INCLUDE_DIRS}
+    -L${CDF_PATH}
+    -L${NetCDF_INCLUDE_DIRS}
+    -L${crtm_LIB}
+    -lcrtm
+    -lnetcdff
+    -lgomp
     only: 
     wrap_forward 
     wrap_k_matrix
@@ -43,6 +63,7 @@ add_custom_command(
   )
 list(GET _Python3_INTERPRETER_PROPERTIES 6 version)
 set(produced_so ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.${version}.so)
+
 install(FILES ${produced_so} DESTINATION pycrtm)
 
 #install(TARGETS pycrtm LIBRARY DESTINATION pycrtm)

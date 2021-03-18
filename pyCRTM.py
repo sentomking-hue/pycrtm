@@ -5,7 +5,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 thisDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,thisDir)
-from pycrtm import pycrtm
+#get around extra wrapper layer thanks to scikit-build
+from pycrtm import pycrtm as p
+pycrtm = p.pycrtm
 from crtm_io import readSpcCoeff
 from collections import namedtuple
 # Absorber IDs taken from CRTM.
@@ -330,7 +332,6 @@ if __name__ == "__main__":
         profiles.T[i,:] = np.asarray(h5['temperatureLayers'])
         profiles.Q[i,:] = np.asarray(h5['humidityLayers'])
         profiles.O3[i,:] = np.asarray(h5['ozoneConcLayers'])
-        profiles.CO2[i,:] = np.asarray(h5['co2ConcLayers'])
         profiles.clouds[i,:,0,0] = np.asarray(h5['cloudConcentration'])
         profiles.clouds[i,:,0,1] = np.asarray(h5['cloudEffectiveRadius'])
         profiles.aerosols[i,:,0,0] = np.asarray(h5['aerosolConcentration'])
