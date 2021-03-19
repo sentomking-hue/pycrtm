@@ -103,6 +103,15 @@ def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=
 
 class pyCRTM:
     def __init__(self):
+        thisDir = os.path.split(os.path.abspath(__file__))[0]
+        cfg = configparser.ConfigParser()
+        cfg.read( os.path.join(thisDir,'setup.cfg') )
+        if(cfg['Setup']['coef_with_install'] == 'False'):
+            self.coefficientPath = cfg['Coefficients']['path']
+        else:
+            self.coefficientPath = os.path.join(thisDir,'coefficients')
+
+
         self.coefficientPath = ''
         self.sensor_id = ''
         self.profiles = []
@@ -307,62 +316,4 @@ class pyCRTM:
 
         if(self.StoreEmis):
             self.surfEmisRefl = pycrtm.emissivityreflectivity
-if __name__ == "__main__":
-    thisDir = os.path.dirname(os.path.abspath(__file__))
-    cases = os.listdir( os.path.join(thisDir,'testCases','data') )
-    cases.sort()
-    pathInfo = configparser.ConfigParser()
-    pathInfo.read( os.path.join(thisDir,'crtm.cfg') ) 
-
-
-    profiles = profilesCreate( 4, 92 )
-    
-    for i,c in enumerate(cases):
-        h5 = h5py.File(os.path.join(thisDir, 'testCases','data',c) , 'r')
-        profiles.Angles[i,0] = h5['zenithAngle'][()]
-        profiles.Angles[i,1] = 999.9 
-        profiles.Angles[i,2] = 100.0  # 100 degrees zenith below horizon.
-        profiles.Angles[i,3] = 0.0 # zero solar azimuth 
-        profiles.Angles[i,4] = h5['scanAngle'][()]
-        profiles.DateTimes[i,0] = 2001
-        profiles.DateTimes[i,1] = 1
-        profiles.DateTimes[i,2] = 1
-        profiles.Pi[i,:] = np.asarray(h5['pressureLevels'] )
-        profiles.P[i,:] = np.asarray(h5['pressureLayers'][()])
-        profiles.T[i,:] = np.asarray(h5['temperatureLayers'])
-        profiles.Q[i,:] = np.asarray(h5['humidityLayers'])
-        profiles.O3[i,:] = np.asarray(h5['ozoneConcLayers'])
-        profiles.clouds[i,:,0,0] = np.asarray(h5['cloudConcentration'])
-        profiles.clouds[i,:,0,1] = np.asarray(h5['cloudEffectiveRadius'])
-        profiles.aerosols[i,:,0,0] = np.asarray(h5['aerosolConcentration'])
-        profiles.aerosols[i,:,0,1] = np.asarray(h5['aerosolEffectiveRadius'])
-        profiles.aerosolType[i] = h5['aerosolType'][()]
-        profiles.cloudType[i] = h5['cloudType'][()]
-        profiles.cloudFraction[i,:] = h5['cloudFraction'][()]
-        profiles.climatology[i] = h5['climatology'][()]
-        profiles.surfaceFractions[i,:] = h5['surfaceFractions']
-        profiles.surfaceTemperatures[i,:] = h5['surfaceTemperatures']
-        profiles.S2m[i,1] = 33.0 # just use salinity out of S2m for the moment.
-        profiles.windSpeed10m[i] = 5.0
-        profiles.windDirection10m[i] = h5['windDirection10m'][()]
-        # land, soil, veg, water, snow, ice
-        profiles.surfaceTypes[i,0] = h5['landType'][()]
-        profiles.surfaceTypes[i,1] = h5['soilType'][()]
-        profiles.surfaceTypes[i,2] = h5['vegType'][()]
-        profiles.surfaceTypes[i,3] = h5['waterType'][()]
-        profiles.surfaceTypes[i,4] = h5['snowType'][()]
-        profiles.surfaceTypes[i,5] = h5['iceType'][()]
-        profiles.LAI[i] = h5['LAI'][()]
-        h5.close()
-    crtmOb = pyCRTM()
-    crtmOb.profiles = profiles
-    crtmOb.coefficientPath = pathInfo['CRTM']['coeffs_dir']
-    crtmOb.sensor_id = 'atms_npp'
-    crtmOb.nThreads = 4
-    crtmOb.loadInst()
-    crtmOb.runDirect()
-    crtmOb.runK()
-
-
-
 
