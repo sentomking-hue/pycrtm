@@ -10,24 +10,20 @@ find_package( NetCDF REQUIRED COMPONENTS Fortran )
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${_Python3_NumPy_INCLUDE_DIR})
 include_directories(${NetCDF_INCLUDE_DIRS})
+# get the lib path, because for whatever reason, you can link against shared object directly.
+get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
 set(crtm_INCLUDE $ENV{CRTM_INSTALL}/include/)
 set(crtm_LIB $ENV{CRTM_INSTALL}/lib/)
-
-#set(crtm_INCLUDE "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/include")
-#set(crtm_LIB "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/lib")
 set(ompFlag $ENV{PYCRTM_LINKER_FLAG_OMP})
-#set(crtm_INCLUDE "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/include")
-#set(crtm_LIB "/discover/nobackup/bkarpowi/github/JCSDA_crtm/REL-2.4.0/crtm_v2.4.0-alpha/lib")
+
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.f90")
 set(f2py_module_name "pycrtm")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
 
+#_dumb is used to avoid circular dependency which breaks Ninja.
 add_custom_target(${f2py_module_name}_dumb ALL
   DEPENDS ${generated_module_file}
   )
-
-# get the lib path, because for whatever reason, you can link against shared object directly.
-get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
 
 add_custom_command(
   OUTPUT ${generated_module_file}
