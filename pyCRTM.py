@@ -63,10 +63,8 @@ def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=
     p['Pi'] = np.nan*np.ones([nProfiles, nLevels+1])
     # satzen, sataz, sunzen, sunaz, scanangle
     p['Angles'] = np.nan*np.ones([nProfiles, 5])
-    # P (2meter), T (2meter), Q (2meter), U(10meter), V(10meter), fetch 
-    p['S2m'] = np.nan*np.ones([nProfiles,6])
-    # skin T, salinity, snow_fraction, foam_fraction, fastem coef 1:5
-    p['Skin'] = np.nan*np.zeros([nProfiles,10])
+    # Salinity (PSU)
+    p['Salinity'] = np.nan*np.zeros([nProfiles])
     # surftype, water type
     p['SurfType'] = np.nan*np.zeros([nProfiles,2])
     # latitude, longitude, elevation 
@@ -229,7 +227,7 @@ class pyCRTM:
                                        self.profiles.surfaceTemperatures, 
                                        self.profiles.surfaceFractions, 
                                        self.profiles.LAI, 
-                                       self.profiles.S2m[:,1], 
+                                       self.profiles.Salinity, 
                                        self.profiles.windSpeed10m, 
                                        self.profiles.windDirection10m,
                                        self.profiles.surfaceTypes[:,0], 
@@ -287,7 +285,7 @@ class pyCRTM:
                                                                                                                                          self.profiles.surfaceTemperatures, 
                                                                                                                                          self.profiles.surfaceFractions, 
                                                                                                                                          self.profiles.LAI, 
-                                                                                                                                         self.profiles.S2m[:,1], 
+                                                                                                                                         self.profiles.Salinity, 
                                                                                                                                          self.profiles.windSpeed10m, 
                                                                                                                                          self.profiles.windDirection10m,
                                                                                                                                          self.profiles.surfaceTypes[:,0], 
