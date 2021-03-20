@@ -11,75 +11,43 @@ This `README` has 4 parts:
 
 1. Installation -- installing this library
 2. Test/Examples -- describing test in testCases subdirectory
-3. Python path etc -- how to use this library in a project.
+3. Importing -- how to use this library in a project.
 4. Using the interface -- HOWTO/run through on how to use this interface
 
 - Bryan Karpowicz -- October 23, 2020
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
+A. Dependencies numpy and scikit-build (install those first, if you don't have them.) 
+B. Done via the `setup.py` invoking standard setuptools-style 
+```
+python3 setup.py install
+```
+compiler options are handled through setup.cfg
+```
+[Setup]
+# Options
+# compiler = gfortran
+# compiler = intel
+# compiler = gfortran-openmp
+# compiler = intel-openmp
+compiler = gfortran-openmp
+crtm_install = /discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm_v2.4.0/
+# Download Coefficients
+# Controls whether coefficients are downloaded
+download = True
+coef_with_install = True
+[Coefficients]
+# Use to specify alternative coefficient file location where Little Endian Coefficient files are stored.
+# If user desires coefficients to be stored with the installed package, leave this alone.
+# If user selects coef_with_install = False, this must be specified.
+# set argument below (path) to the full path of the coefficients.
+path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
+```
+By default the CRTM coefficients will be copied along with the pycrtm install to your site-packages. To change this set `coef_with_install` to False, and set `path` to the desired location. Note: `path` will beignored if `coef_with_install` is True.
+
+If you don't have write access to your python distribution you can use the standard --prefix or --user to install to a local directory paired with setting your `PYTHONPATH` to point to the local directory.
  
-Done via the `setup_pycrtm.py` script  
-
-Usage:
-```
-usage: setup_pycrtm.py [-h] --install INSTALL --repos RTPATH --coef COEF
-                       --ncpath NCPATH --h5path H5PATH --jproc JPROC
-                       [--arch ARCH] [--inplace]
-the following arguments are required: --install, --repos, --coef, --ncpath, --h5path, --jproc
-```
-
-### Required:
-* `--install` -  Install path to crtm library or where the user would like the crtm install directory (e.g., /home/user/ if you want crtm_v2.4.0 to install in /home/user/crtm_v2.4.0)
-* `--repos`   -  Path to CRTM git checkout (e.g. REL-2.4.0) 
-* `--coef`    -  Path where the crtm coefficients are stored under subdirectory crtm_coef_pycrtm
-* `--ncpath`   -  Path to netcdf library (root path e.g. /usr/local/Cellar/netcdf/4.7.4_1, where lib and include are subdirectories underneath) 
-* `--h5path`   -  Path to hdf5 library (root path e.g. /usr/local/Cellar/hdf5/1.12.0_1, where lib and include are subdirectories underneath) 
-* `--jproc`   -  The number of threads to pass compiler
-
-### Optional:
-* `--arch` select compiler/environment gfortran (gcc), ifort (intel) have been tested along with openmp enabled equiavalents (gfortran-openmp, ifort-openmp). Default gfortran-openmp
-* `--inplace` this will skip the building of CRTM, but instead just compile pycrtm interface and link to the install path (e.g.,--install /home/user/, if you have previously installed to /home/user/crtm_v2.4.0)`.
-
-
-Example to install CRTM in this directory under a subdirectory under the CRTM git checkout, and place the coefficients in this diectory`:
-```
-./setup_pycrtm.py  --install $PWD/../REL-2.4.0/ --repos $PWD/../REL-2.4.0 --jproc 1 --coef $PWD --ncpath /usr/local/Cellar/netcdf/4.7.4_1 --h5path /usr/local/Cellar/hdf5/1.12.0_1 --arch gfortran-openmp
-```
-Once completed:
-
-* `$PWD/pycrtm.cpython-37m-PLATFORM.so` <-- (will always reside here) f2py interface compiled by setup 
-* `$PWD/crtm.cfg`                       <-- Path where the CRTM coefficients are stored 
-* `$PWD/pycrtm.stde`                    <-- standard error captured from compilation
-* `$PWD/pycrtm.stdo`                    <-- standard output captured from compilation 
-* `$PWD/sgnFile.pyf`                    <-- automatically generated f2py interface file
-
-Following the example the CRTM will be installed here:
-
-* `$PWD/../REL-2.4.0/config.log`                        <-- usual config associated with CRTM
-* `$PWD/../REL-2.4.0/crtm_v2.4.0/include`               <-- path to all compiled fortran modules
-* `$PWD/../REL-2.4.0/crtm_v2.4.0/lib/libcrtm.a`         <-- usual crtm static library
-* `$PWD/crtm_coef_pycrtm`                               <-- path to crtm_coefficients
-
-To make things a bit simpler some installer scripts and scripts to load modules on the NASA NCCS discover cluster have been included:
-* `discover_install_gfortran_openmp.sh`     <-- will install using gfortran and OpenMP if you checkout the CRTM repository at ../REL-2.4.0 
-* `discover_install_ifort_openmp.sh`        <-- will install using ifort and OpenMP if you checkout the CRTM repository at ../REL-2.4.0
-* `discover_modules_gfortran_openmp.sh`	    <-- load the necessary modules whenever you want to run pycrtm using gfortran/OpenMP on discover
-* `discover_modules_ifort_openmp.sh`        <-- load the necessary modules whenever you want to run pycrtm using ifort/OpenMP on discover
-
-Note you will have to add the following to your .basrc (if you use bash):
-```bash
-export OPT='/discover/swdev/jcsda/modules'
-module use $OPT/modulefiles
-```
-If you use cshell you will need to add the following lines to your .cshrc:
-```csh
-setenv OPT /discover/swdev/jcsda/modules
-module use $OPT/modulefiles
-```
-For those on a Mac and use homebrew some installer scripts have been included:
-* `homebrew_install.sh`                     <-- will install on standard homebrew install using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
-* `homebrew_install_userdir.sh`             <-- will install on homebrew install configured to run in the user's directory using gfortran/OpenMP if you checkout the CRTM repository at ../REL-2.4.0
 
 ---------------------------------------------------------------------------------------- 
 
@@ -104,17 +72,10 @@ The following scripts will run CRTM without aerosols or clouds:
 For those Jupyter notebook fans, there is even Jupyter notebook example simulating ATMS:
 * `$PWD/testCases/test_atms.ipynb`
 
-## 3. Python path etc - needs work, but works for me at the moment: 
+## 3. Importing 
 
-Right now things aren't setup to install into a user's Python path. What I typically plan on doing is set this as a git submodule, and bring it into a project and import the module using something like:
 ```Python
 from pycrtm.pyCRTM import profilesCreate, pyCRTM
-```
-Or, do something like is done in the testCases scripts and insert the path, then import.
-```Python
-pycrtmDir = [this directory]
-sys.path.insert(0,pycrtmDir)
-from pyCRTM import pyCRTM, profilesCreate
 ```
 ---------------------------------------------------------------------------------------- 
 

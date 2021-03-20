@@ -2,7 +2,6 @@ import os, sys, tarfile, configparser, ssl, shutil, socket
 from contextlib import closing
 import urllib.request
 from skbuild import setup
-valid_compilers = ['gfortran','gfortran-openmp','intel','intel-openmp']
 def main():
     #Completely remove previous _skbuild, because cache will remember previous interation and ignore you if you change something.
     try:shutil.rmtree('_skbuild')
@@ -56,6 +55,7 @@ def readSetup(setup_file, scriptDir):
     cfg.read( os.path.join(scriptDir,'setup.cfg') )
     compiler = cfg['Setup']['compiler'].lower()
     crtm_install = cfg['Setup']['crtm_install']
+    valid_compilers = ['gfortran','gfortran-openmp','intel','intel-openmp']
     if(compiler not in valid_compilers):
         print('{} is not a supported compiler check setup.cfg'.format(compiler))
     download_coef = cfg['Setup']['download']
