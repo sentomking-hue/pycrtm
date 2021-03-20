@@ -3,9 +3,6 @@ import configparser
 import os, h5py, sys 
 import numpy as np
 from matplotlib import pyplot as plt
-thisDir = os.path.dirname(os.path.abspath(__file__))
-parentDir = os.path.dirname(thisDir)
-sys.path.insert(0,parentDir)
 from pyCRTM import pyCRTM, profilesCreate
  
 def main(coefficientPath, sensor_id):
@@ -47,7 +44,7 @@ def main(coefficientPath, sensor_id):
         profiles.climatology[i] = h5['climatology'][()]
         profiles.surfaceFractions[i,:] = h5['surfaceFractions']
         profiles.surfaceTemperatures[i,:] = h5['surfaceTemperatures']
-        profiles.S2m[i,1] = 33.0 # just use salinity out of S2m for the moment.
+        profiles.Salinity[i] = 33.0 
         profiles.windSpeed10m[i] = 5.0
         profiles.LAI[i] = h5['LAI'][()]
         profiles.windDirection10m[i] = h5['windDirection10m'][()]

@@ -18,8 +18,9 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-A. Dependencies numpy and scikit-build (install those first, if you don't have them.) 
-B. Done via the `setup.py` invoking standard setuptools-style 
+- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them.) 
+
+- Done via the `setup.py` invoking standard setuptools-style 
 ```
 python3 setup.py install
 ```
@@ -44,7 +45,7 @@ coef_with_install = True
 # set argument below (path) to the full path of the coefficients.
 path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
 ```
-By default the CRTM coefficients will be copied along with the pycrtm install to your site-packages. To change this set `coef_with_install` to False, and set `path` to the desired location. Note: `path` will beignored if `coef_with_install` is True.
+By default the CRTM coefficients will be copied along with the pycrtm install to your site-packages. To change this set `coef_with_install` to False, and set `path` to the desired location. Note: `path` will be ignored if `coef_with_install` is True.
 
 If you don't have write access to your python distribution you can use the standard --prefix or --user to install to a local directory paired with setting your `PYTHONPATH` to point to the local directory.
  

@@ -10,6 +10,7 @@ find_package( NetCDF REQUIRED COMPONENTS Fortran )
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${_Python3_NumPy_INCLUDE_DIR})
 include_directories(${NetCDF_INCLUDE_DIRS})
+get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
 set(crtm_INCLUDE $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
 set(crtm_LIB $ENV{CRTM_INSTALL}/lib/)
 
@@ -18,16 +19,15 @@ if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel")
 else()
     set(ompFlag "-lgomp")
 endif()
+
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.f90")
 set(f2py_module_name "pycrtm")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
 
+#_dumb is used to avoid circular dependency which breaks Ninja.
 add_custom_target(${f2py_module_name}_dumb ALL
   DEPENDS ${generated_module_file}
   )
-
-# get the lib path, because for whatever reason, you can link against shared object directly.
-get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
 
 add_custom_command(
   OUTPUT ${generated_module_file}
