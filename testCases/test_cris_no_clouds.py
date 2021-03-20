@@ -3,9 +3,6 @@ import configparser
 import os, h5py, sys 
 import numpy as np
 from matplotlib import pyplot as plt
-thisDir = os.path.dirname(os.path.abspath(__file__))
-parentDir = os.path.dirname(thisDir)
-sys.path.insert(0,parentDir)
 from pyCRTM import pyCRTM, profilesCreate
  
 def main(coefficientPath, sensor_id):
