@@ -17,13 +17,6 @@ def main():
     if('T' in with_install.upper()): with_install = True
     else: with_install = False
     os.environ['CRTM_INSTALL'] = crtm_install
-    d = {}
-    d['gfortran-openmp']='-lgomp'
-    d['intel-openmp'] ='-liomp5'
-    d['gfortran']=''
-    d['intel']= ''
-    # set linker flag to compile in omp, or not if just intel or gfortran.
-    os.environ['PYCRTM_LINKER_FLAG_OMP'] = d[compiler]
     #If the user selects download_coef
     if(download_coef and not with_install): downloadAndMoveCoef(with_install,coef_path)
     elif(with_install): downloadAndMoveCoef(with_install,os.path.join(scriptDir,'coefficients'))
