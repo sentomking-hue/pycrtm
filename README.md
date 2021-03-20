@@ -18,8 +18,9 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-## A. Dependencies h5py, numpy and scikit-build (install those first, if you don't have them.) 
-## B. Done via the `setup.py` invoking standard setuptools-style 
+- Dependencies h5py, numpy and scikit-build (install those first, if you don't have them.) 
+
+- Done via the `setup.py` invoking standard setuptools-style 
 ```
 python3 setup.py install
 ```
