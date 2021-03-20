@@ -18,7 +18,7 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them.). Note crtm must be built with the static option (`ecbuild --static`) 
+- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). Note crtm must be built with the static option (`ecbuild --static`) 
 - Configuration
 First modify `setup.cfg` to point to the crtm install location (path underneath should contain `lib/libcrtm.a`). 
 ```
