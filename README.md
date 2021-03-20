@@ -14,7 +14,7 @@ This `README` has 4 parts:
 3. Importing -- how to use this library in a project.
 4. Using the interface -- HOWTO/run through on how to use this interface
 
-- Bryan Karpowicz -- October 23, 2020
+- Bryan Karpowicz -- March 20, 2021
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
