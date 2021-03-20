@@ -18,25 +18,17 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them.) 
-
-- Done via the `setup.py` invoking standard setuptools-style 
-```
-python3 setup.py install
-```
-compiler options are handled through setup.cfg
+- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them.). Note crtm must be built with the static option (`ecbuild --static`) 
+- Configuration
+First modify `setup.cfg` to point to the crtm install location (path underneath should contain `lib/libcrtm.a`). 
 ```
 [Setup]
-# Options
-# compiler = gfortran
-# compiler = intel
-# compiler = gfortran-openmp
-# compiler = intel-openmp
-compiler = gfortran-openmp
-crtm_install = /discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm_v2.4.0/
+# Specify the location of the crtm install (ecbuild install ONLY)
+crtm_install = /discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm/build
 # Download Coefficients
 # Controls whether coefficients are downloaded
 download = True
+#This will move the coefficients with the package install.
 coef_with_install = True
 [Coefficients]
 # Use to specify alternative coefficient file location where Little Endian Coefficient files are stored.
@@ -45,10 +37,36 @@ coef_with_install = True
 # set argument below (path) to the full path of the coefficients.
 path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
 ```
-By default the CRTM coefficients will be copied along with the pycrtm install to your site-packages. To change this set `coef_with_install` to False, and set `path` to the desired location. Note: `path` will be ignored if `coef_with_install` is True.
+In the example above the coefficients will be included with the pycrtm install. To change this, set `coef_with_install` and set `path` to the location where you would like crtm coefficients stored. If you already have a directory with coefficients, you can set `download` and `coef_with_install` to False, and set `path` to that location. The pycrtm configuration will then point to the location in `path`.  
 
-If you don't have write access to your python distribution you can use the standard --prefix or --user to install to a local directory paired with setting your `PYTHONPATH` to point to the local directory.
- 
+- Installation 
+
+Done by building a wheel which can then be installed via pip 
+```
+python3 setup.py bdist_wheel
+```
+This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against the crtm library.
+
+If you have control of your system's python distribution the next step is to install the module using pip (or pip3 depending upon your configuration)
+```
+pip install dist/pyCRTM_JCSDA*.whl
+``` 
+If you don't have control of your system's python, you can install into another directory and set your `$PYTHONPATH`. For example:
+```
+pip install dist/pyCRTM_JCSDA*.whl --target /discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/
+```
+paired with appending `/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/` to the `PYTHONPATH` environment variable in your .bashrc or .cshrc.
+
+For Bash this is:
+```
+export PYTHONPATH="${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/"
+```
+For Tcsh/csh:
+```
+setenv PYTHONPATH ${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules
+```
+
+Compiler options are handled autmoatically through cmake. On HPC systems this means loading the right set of modules. For example, if you would like pycrtm compiled with intel, you would load the same intel modules you used to build crtm. 
 
 ---------------------------------------------------------------------------------------- 
 
