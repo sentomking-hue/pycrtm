@@ -10,7 +10,7 @@ def main():
     #path of this file.
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
     #read configuration
-    compiler, download_coef, with_install, coef_path, crtm_install= readSetup('setup.cfg',scriptDir)
+    download_coef, with_install, coef_path, crtm_install= readSetup('setup.cfg',scriptDir)
     #make sure we convert string to bool.
     if('T' in download_coef.upper()): download_coef= True
     else:download_coef = False
@@ -18,8 +18,8 @@ def main():
     else: with_install = False
     os.environ['CRTM_INSTALL'] = crtm_install
     #If the user selects download_coef
-    if(download_coef and not with_install): downloadAndMoveCoef(with_install,coef_path)
-    elif(with_install): downloadAndMoveCoef(with_install,os.path.join(scriptDir,'coefficients'))
+    if(download_coef and not with_install): downloadAndMoveCoef(coef_path)
+    elif(with_install): downloadAndMoveCoef(os.path.join(scriptDir,'coefficients'))
     else:
         print("Skipping Download of Coefficients. Hopefully, you know what this means, and downloaded the coefficients somewhere.")
     if(with_install):
@@ -42,22 +42,20 @@ def main():
         py_modules=['crtm_io', 'pyCRTM'])
     if(download_coef):
         shutil.rmtree('fix_crtm-internal_develop')
+    if(with_install):
+        shutil.rmtree('coefficients')
     os.remove('MANIFEST.in')
 def readSetup(setup_file, scriptDir):
     cfg = configparser.ConfigParser()
     cfg.read( os.path.join(scriptDir,'setup.cfg') )
-    compiler = cfg['Setup']['compiler'].lower()
     crtm_install = cfg['Setup']['crtm_install']
-    valid_compilers = ['gfortran','gfortran-openmp','intel','intel-openmp']
-    if(compiler not in valid_compilers):
-        print('{} is not a supported compiler check setup.cfg'.format(compiler))
     download_coef = cfg['Setup']['download']
     with_install = cfg['Setup']['coef_with_install']
     if('path' in list(cfg['Coefficients'].keys())):
         coef_path = cfg['Coefficients']['path']
     else:
         coef_path = os.path.join(scritpDir,'coefficients')
-    return compiler, download_coef, with_install, coef_path, crtm_install
+    return download_coef, with_install, coef_path, crtm_install
 
 def downloadCoef(url):
     print("Downlading coefficients from {}".format(url))
@@ -128,7 +126,7 @@ def moveCrtmCoefficients(installLocation):
     p = os.path.join(cwd,'fix_crtm-internal_develop','EmisCoeff','VIS_Water','SEcategory','Little_Endian') 
     for f in os.listdir(p):
         shutil.copy(os.path.join(p,f), installLocation)
-def downloadAndMoveCoef(with_install,coef_path):
+def downloadAndMoveCoef(coef_path):
     #if file is downloaded don't do it again.
     if(not os.path.exists('fix_REL-2.4.0.tgz') ):
         # if you're on discover, don't use ftp, because, well, you can't. Anyone else can talk to UCAR.
@@ -138,9 +136,7 @@ def downloadAndMoveCoef(with_install,coef_path):
             url = 'ftp://ftp.ucar.edu/pub/cpaess/bjohns/fix_REL-2.4.0.tgz'
         downloadCoef(url)
     extractCoef()
-    if( not with_install ): moveCrtmCoefficients(coef_path)
-    else:
-        moveCrtmCoefficients(os.path.join(coef_path,'coefficients'))
+    moveCrtmCoefficients(coef_path)
 
 if __name__ == "__main__":
     main()

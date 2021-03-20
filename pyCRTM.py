@@ -105,12 +105,10 @@ class pyCRTM:
         cfg = configparser.ConfigParser()
         cfg.read( os.path.join(thisDir,'setup.cfg') )
         if(cfg['Setup']['coef_with_install'] == 'False'):
-            self.coefficientPath = cfg['Coefficients']['path']
+            self.coefficientPath = cfg['Coefficients']['path']+"/"
         else:
-            self.coefficientPath = os.path.join(thisDir,'coefficients')
+            self.coefficientPath = os.path.join(thisDir,'coefficients')+'/'
 
-
-        self.coefficientPath = ''
         self.sensor_id = ''
         self.profiles = []
         self.traceConc = []
