@@ -113,6 +113,7 @@ crtmOb.sensor_id = sensor_id
 crtmOb.nThreads = 4
 crtmOb.profiles = profiles
 ```
+Note that while the python interface allows for threads to be set, if your environment has the environment variable `OMP_NUM_THREADS` set, the number of threads will be set by the environment variable, and the argument passed through pyCRTM will be ignored.
 
 Next, the instrument is loaded/number of channels in the output structure are initialized:
 
