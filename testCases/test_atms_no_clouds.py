@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import configparser
 import os, h5py, sys 
 import numpy as np
 from matplotlib import pyplot as plt
