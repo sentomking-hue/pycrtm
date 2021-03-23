@@ -130,10 +130,10 @@ def downloadAndMoveCoef(coef_path):
     #if file is downloaded don't do it again.
     if(not os.path.exists('fix_REL-2.4.0.tgz') ):
         # if you're on discover, don't use ftp, because, well, you can't. Anyone else can talk to UCAR.
-        if('discover' in socket.gethostname()):
-            url = 'https://gmao.gsfc.nasa.gov/gmaoftp/bkarpowi/crtm/fix_REL-2.4.0_le.tgz'
-        else:
-            url = 'ftp://ftp.ucar.edu/pub/cpaess/bjohns/fix_REL-2.4.0.tgz'
+        #if('discover' in socket.gethostname()):
+        url = 'https://gmao.gsfc.nasa.gov/gmaoftp/bkarpowi/crtm/fix_REL-2.4.0_le.tgz'
+        #else:
+        #    url = 'ftp://ftp.ucar.edu/pub/cpaess/bjohns/fix_REL-2.4.0.tgz'
         downloadCoef(url)
     extractCoef()
     moveCrtmCoefficients(coef_path)
