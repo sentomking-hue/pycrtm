@@ -17,6 +17,7 @@ def main():
     if('T' in with_install.upper()): with_install = True
     else: with_install = False
     os.environ['CRTM_INSTALL'] = crtm_install
+    shutil.copy(os.path.join(scriptDir,'setup.cfg'),os.path.join(scriptDir,'pyCRTM','pycrtm_setup.txt'))
     #If the user selects download_coef
     if(download_coef and not with_install): downloadAndMoveCoef(coef_path)
     elif(with_install): downloadAndMoveCoef(os.path.join(scriptDir,'coefficients'))
@@ -24,11 +25,11 @@ def main():
         print("Skipping Download of Coefficients. Hopefully, you know what this means, and downloaded the coefficients somewhere.")
     if(with_install):
         f = open(os.path.join(scriptDir,'MANIFEST.in'),'w')
-        f.write('include setup.cfg crtm_io.py coefficients/*.* testCases/*.* testCases/data/*.*')
+        f.write('include pyCRTM/pycrtm_setup.txt crtm_io.py coefficients/*.* testCases/*.* testCases/data/*.*')
         f.close()
     else:
         f = open(os.path.join(scriptDir,'MANIFEST.in'),'w')
-        f.write('include setup.cfg testCases/*.* testCases/data/*.*')
+        f.write('include pyCRTM/pycrtm_setup.txt testCases/*.* testCases/data/*.*')
         f.close()
     requires=['numpy']
     setup(
@@ -39,7 +40,8 @@ def main():
         requires=requires,
         include_package_data=True,
         packages=['pycrtm'],
-        py_modules=['crtm_io', 'pyCRTM'])
+        py_modules=['crtm_io', 'pyCRTM'],
+        package_data={'pyCRTM':['pyCRTM/setup.txt']})
     if(download_coef):
         shutil.rmtree('fix_crtm-internal_develop')
     if(with_install):

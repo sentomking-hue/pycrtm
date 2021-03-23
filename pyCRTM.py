@@ -103,7 +103,13 @@ class pyCRTM:
     def __init__(self):
         thisDir = os.path.split(os.path.abspath(__file__))[0]
         cfg = configparser.ConfigParser()
-        cfg.read( os.path.join(thisDir,'setup.cfg') )
+        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.0.dist-info','RECORD'))
+        lines = f.readlines()
+        for l in lines:
+            if('pycrtm_setup.txt' in l):
+                pycrtm_setup_dir = l.split('.txt')[0]
+                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+        cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
         if(cfg['Setup']['coef_with_install'] == 'False'):
             self.coefficientPath = cfg['Coefficients']['path']+"/"
         else:
