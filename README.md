@@ -142,5 +142,46 @@ Temperature_Jacobian = crtm.TK
 #Emissivity (nprofiles, nchan)
 Emissivity = crtmOb.surfEmisRefl
 ```
+Futher detail on setting profiles can be seen in the testCases directory, however, for quick reference and explanation of profile object:
+```Python
+        profiles.Angles[i,0] =  # instrument zenith Angle
+        profiles.Angles[i,1] =  # instrument azimuth Angle (optional)
+        profiles.Angles[i,2] =  # Solar zenith Angle 
+        profiles.Angles[i,3] =  # Solar Azimuth Angle 
+        profiles.Angles[i,4] =  # Instrument scan angle (see CRTM documentation. e.g., https://ftp.emc.ncep.noaa.gov/jcsda/CRTM/CRTM_User_Guide.pdf)
+        profiles.DateTimes[i,0] = #Year
+        profiles.DateTimes[i,1] = #Month
+        profiles.DateTimes[i,2] = #Day
+        profiles.Pi[i,:] =        #Pressure levels/interfaces in hPa
+        profiles.P[i,:] =         #Pressure layers 
+        profiles.T[i,:] =         #Temperature Layers
+        profiles.Q[i,:] =         #Specific humidity  relative to dry air in g/kg
+        profiles.O3[i,:] =        #Ozone concentration ppmv (dry air)
+        profiles.clouds[i,:,0,0] = #cloud concentration kg/m**2 (optional)
+        profiles.clouds[i,:,0,1] = #cloud effective radius microns (optional)
+        profiles.aerosols[i,:,0,0] = #aerosol concentration kg/m**2 (optional)
+        profiles.aerosols[i,:,0,1] = #aerosol effective radius microns (optional)
+        profiles.aerosolType[i] =    #integer representing aerosol type (optional !  1 = Dust 2 = Sea salt-SSAM  
+                                     # 3 = Sea salt-SSCM 4 = Sea salt-SSCM2 5 = Sea salt-SSCM3  6 = Organic carbon 7 = Black carbon 8 = Sulfate)
+        profiles.cloudType[i] =      #integer representing cloud type (optional)
+        profiles.cloudFraction[i,:] = #cloud fraction (optional)
+        profiles.climatology[i] =    #integer representing climatology 1-6 modtran style climatological profiles (optional)
+        profiles.surfaceFractions[i,:] = # fractions of land, water, snow, ice
+        profiles.surfaceTemperatures[i,:] = #surface temperatures (K) of land, water, snow, ice
+        profiles.Salinity[i] =              #salinity in PSU
+        profiles.windSpeed10m[i] =          #10m windspeed m/s
+        profiles.LAI[i] =                   #Leaf area index (optional)
+        profiles.windDirection10m[i] =      #10m wind direction (note opposite of atmospheric convention, uses oceanongrapher convention) deg E from N
+        # land, soil, veg, water, snow, ice
+        profiles.surfaceTypes[i,0] = #land classification type index refer to CRTM documentation (optional)
+        profiles.surfaceTypes[i,1] = #soil classification type index refer to CRTM documentation (optional)
+        profiles.surfaceTypes[i,2] = #vegetation type classification type index refer to CRTM documentation (optional)
+        profiles.surfaceTypes[i,3] = # water type (1=Sea water) check CRTM documentation for others.
+        profiles.surfaceTypes[i,4] = # snow type 1=old snow 2=new snow (optional).
+        profiles.surfaceTypes[i,5] = # ice type 1= new ice (optional) (optional)
+
+```
+
+
 ---------------------------------------------------------------------------------------- 
 

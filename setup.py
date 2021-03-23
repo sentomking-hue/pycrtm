@@ -73,7 +73,7 @@ def extractCoef():
     t.close()
     print("Done Untarring.")
 def moveCrtmCoefficients(installLocation):
-    
+    print("Moving Coefficients.") 
     if( not os.path.isdir(installLocation  ) ):
         os.makedirs( installLocation   )
     cwd = os.getcwd()
