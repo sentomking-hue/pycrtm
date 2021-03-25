@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 myshell=`echo $SHELL | rev | cut -d"/" -f1 | rev`
 source $MODULESHOME/init/$myshell
 module purge
