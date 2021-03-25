@@ -1,5 +1,5 @@
 #!/bin/sh
-set myshell=`echo $shell | rev | cut -d"/" -f1 | rev`
+myshell=`echo $SHELL | rev | cut -d"/" -f1 | rev`
 source $MODULESHOME/init/$myshell
 module purge
 export OPT='/discover/swdev/jcsda/modules'
