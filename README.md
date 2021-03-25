@@ -18,6 +18,7 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
+- For the novice that doesn't care about where or how this installs, look at the crtm-bundle and run kickstart_pyCRTM.sh Otherwise...
 - Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). Note crtm must be built with the static option (`ecbuild --static`) 
 - Configuration
 First modify `setup.cfg` to point to the crtm install location (path underneath should contain `lib/libcrtm.a`). 
@@ -40,8 +41,6 @@ path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
 In the example above the coefficients will be included with the pycrtm install. To change this, set `coef_with_install` and set `path` to the location where you would like crtm coefficients stored. If you already have a directory with coefficients, you can set `download` and `coef_with_install` to False, and set `path` to that location. The pycrtm configuration will then point to the location in `path`.  
 
 - Installation 
-- For the novice that doesn't care about where or how this installs, look at the crtm-bundle and run kickstart_pyCRTM.sh 
-- For the more experienced and are particular when it comes to their python installs see below:
 Done by building a wheel which can then be installed via pip 
 ```
 python3 setup.py bdist_wheel
