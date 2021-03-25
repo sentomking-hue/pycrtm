@@ -95,7 +95,7 @@ For those Jupyter notebook fans, there is even Jupyter notebook example simulati
 ## 3. Importing 
 
 ```Python
-from pycrtm.pyCRTM import profilesCreate, pyCRTM
+from pyCRTM import pyCRTM, profilesCreate
 ```
 ---------------------------------------------------------------------------------------- 
 
