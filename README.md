@@ -41,17 +41,17 @@ path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
 In the example above the coefficients will be included with the pycrtm install. To change this, set `coef_with_install` and set `path` to the location where you would like crtm coefficients stored. If you already have a directory with coefficients, you can set `download` and `coef_with_install` to False, and set `path` to that location. The pycrtm configuration will then point to the location in `path`.  
 
 - Installation 
-Done by building a wheel which can then be installed via pip 
+There are two recommended ways to install. The first, if the user has full write access to their python distribution, it may be installed globally using:
+```
+python3 setup.py install 
+```
+This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against th crtm library.
+
+The second, if the user doesn't have full write access to their python distribution is to first build a wheel, and install using pip:
 ```
 python3 setup.py bdist_wheel
 ```
-This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against the crtm library.
-
-If you have control of your system's python distribution the next step is to install the module using pip (or pip3 depending upon your configuration)
-```
-pip install dist/pyCRTM_JCSDA*.whl
-``` 
-If you don't have control of your system's python, you can install into another directory and set your `$PYTHONPATH`. For example:
+This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against the crtm library. Once the wheel has been built, it may be installed locally using pip:
 ```
 pip install dist/pyCRTM_JCSDA*.whl --target /discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/
 ```

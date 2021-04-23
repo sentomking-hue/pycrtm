@@ -101,7 +101,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
   TYPE(CRTM_Surface_type), ALLOCATABLE    :: sfc(:)
   TYPE(CRTM_RTSolution_type), ALLOCATABLE :: rts(:,:)
   TYPE(CRTM_Geometry_type), ALLOCATABLE   :: geo(:)
-  type(crtm_options_type) ,ALLOCATABLE    :: options(:)
+  TYPE(crtm_options_type) ,ALLOCATABLE    :: options(:)
   sensor_id(1) = sensor_id_in
   ! Program header
   ! --------------
@@ -725,7 +725,7 @@ END SUBROUTINE wrap_k_matrix
   SUBROUTINE set_emissivity(options, n, use_passed_emissivity )
     USE crtm_MODULE
     IMPLICIT NONE
-    type(crtm_options_type), INTENT(INOUT) :: options(:)
+    TYPE(crtm_options_type), INTENT(INOUT) :: options(:)
     INTEGER :: n
     LOGICAL:: use_passed_emissivity
 
