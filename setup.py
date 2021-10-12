@@ -34,7 +34,7 @@ def main():
     requires=['numpy']
     setup(
         name="pyCRTM_JCSDA",
-        version='1.0.0',
+        version='1.0.1',
         description='Python wrapper for the CRTM.',
         author='Bryan Karpowicz',
         requires=requires,
