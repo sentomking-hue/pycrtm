@@ -6,5 +6,5 @@ setenv OPT /discover/swdev/jcsda/modules
 module use $OPT/modulefiles
 module use $OPT/modulefiles/apps
 module use $OPT/modulefiles/core
-module load jedi/gnu-impi/9.2.0
+module load jedi/gnu-impi
 module list

@@ -16,11 +16,12 @@ REAL(KIND=8), ALLOCATABLE :: emissivityReflectivity(:,:,:) ! 2,N_profiles, nChan
 
 CONTAINS
 
-SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwaterCoeff_File, & 
+SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
+                        AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag,  zenithAngle, scanAngle, azimuthAngle, solarAngle, &
                         output_emissivity_flag, use_passed_emissivity, & 
                         year, month, day, & 
-                        nChan, N_Profiles, N_LAYERS, N_trace, &
+                        nChan,N_Profiles, N_LAYERS, N_trace, &
                         pressureLevels, pressureLayers, temperatureLayers, & 
                         traceConcLayers, trace_IDs, & 
                         climatology, & 
@@ -39,9 +40,12 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
   ! variables for interface
   CHARACTER(len=*), INTENT(IN) :: coefficientPath
   CHARACTER(len=*), INTENT(IN) :: sensor_id_in
+  INTEGER, INTENT(IN) :: channel_subset(nChan)
+  CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: CloudCoeff_File
   CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
   CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
-  LOGICAL,          INTENT(IN) :: output_tb_flag, output_transmission_flag, output_emissivity_flag 
+  LOGICAL,          INTENT(IN) :: subset_on,output_tb_flag, output_transmission_flag, output_emissivity_flag 
   LOGICAL,          INTENT(IN) :: use_passed_emissivity
   ! The scan angle is based
   ! on the default Re (earth radius) and h (satellite height)
@@ -59,6 +63,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
   INTEGER,      INTENT(IN) :: landType(N_Profiles), soilType(N_Profiles), vegType(N_Profiles), waterType(N_Profiles)
   INTEGER,      INTENT(IN) :: snowType(N_Profiles), iceType(N_Profiles) 
   INTEGER,      INTENT(IN) :: nthreads
+  
   REAL(KIND=8), INTENT(OUT) :: outTb(N_Profiles,nChan) 
   CHARACTER(len=256), DIMENSION(1) :: sensor_id
   ! --------------------------
@@ -129,11 +134,17 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
                         File_Path=coefficientPath, &
                         Load_CloudCoeff = cloudsOn, &  
                         Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_File = CloudCoeff_File, &  
+                        AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
                         MWwaterCoeff_File = MWwaterCoeff_File, & 
                         Quiet=.True. )
   CALL check_allocate_status(err_stat,'Error Initializing CRTM')
-
+  IF(subset_on) then
+     err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
+                                     Channel_Subset = channel_subset)
+      IF(err_stat /= 0 ) write(*,*)'error specifying channel subset'
+  END IF
   WRITE( *,'(/5x,"Initializing the CRTM...")' )
 
   ! 4b. Output some channel information
@@ -226,7 +237,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
 
   CALL crtm_options_create( options, nChan )
   CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create.' )
-
+  
   !err_stat = CRTM_Forward( atm        , &  ! Input
   !                         sfc        , &  ! Input
   !                         geo        , &  ! Input
@@ -313,7 +324,8 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwat
 
 end SUBROUTINE wrap_forward
 
-SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwaterCoeff_File, & 
+SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
+                        AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag, zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
                         output_emissivity_flag, use_passed_emissivity, & 
                         year, month, day, & 
@@ -347,9 +359,12 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwa
   ! variables for interface
   CHARACTER(len=*), INTENT(IN) :: coefficientPath
   CHARACTER(len=*), INTENT(IN) :: sensor_id_in
+  INTEGER, INTENT(IN) :: channel_subset(nChan)
+  CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: CloudCoeff_File
   CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
   CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
-  LOGICAL, INTENT(IN) :: output_tb_flag, output_transmission_flag, output_emissivity_flag
+  LOGICAL, INTENT(IN) :: subset_on,output_tb_flag, output_transmission_flag, output_emissivity_flag
   LOGICAL, INTENT(IN) :: use_passed_emissivity 
   INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
   ! The scan angle is based
@@ -448,10 +463,18 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwa
                         File_Path=coefficientPath, &
                         Load_CloudCoeff = cloudsOn, &  
                         Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_File = CloudCoeff_File, &  
+                        AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
                         MWwaterCoeff_File = MWwaterCoeff_File, &   
                         Quiet=.True. )
   CALL check_allocate_status(err_stat, 'Error initializing CRTM')
+  IF(subset_on) then
+      err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
+                                     Channel_Subset = channel_subset)
+      IF(err_stat /= 0 ) write(*,*)'error specifying channel subset'
+  END IF
+
 
   ! 4b. Output some channel information
   ! -----------------------------------
@@ -494,7 +517,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, IRwaterCoeff_File, MWwa
 
   ALLOCATE( rts_K( n_channels, N_profiles ), STAT = alloc_stat )
   CALL check_allocate_status(alloc_stat,'Error allocating rts_k')
-
   ! 5c. Allocate the STRUCTURE INTERNALS
   ! ----------------------------------------
   ! The input FORWARD structure

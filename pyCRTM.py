@@ -44,6 +44,14 @@ gases['COF2']  = 29
 gases['SF6']   = 30
 gases['H2S']   = 31
 gases['HCOOH'] = 32
+
+WATER_CLOUD = 1
+ICE_CLOUD = 2
+RAIN_CLOUD = 3
+SNOW_CLOUD = 4
+GRAUPEL_CLOUD = 5
+HAIL_CLOUD = 6
+
 def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=[] ):
     keys  = [ 'P', 'T', 'Q', 'O3']
     for g in additionalGases:
@@ -107,7 +115,7 @@ class pyCRTM:
         if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
             pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
         else:
-            f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.0.dist-info','RECORD'))
+            f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.1.dist-info','RECORD'))
             lines = f.readlines()
             for l in lines:
                 if('pycrtm_setup.txt' in l):
@@ -146,6 +154,8 @@ class pyCRTM:
         self.frequencyGHz = []
         self.wavelengthMicrons = []
         self.wavelengthCm = []
+        self.channelSubset = []
+        self.subsetOn = False
         self.nChan = 0
         self.output_tb_flag = True
         self.StoreTrans = True
@@ -153,10 +163,13 @@ class pyCRTM:
         self.nThreads = 1
         self.MWwaterCoeff_File = 'FASTEM6.MWwater.EmisCoeff.bin'
         self.IRwaterCoeff_File = 'Nalli.IRwater.EmisCoeff.bin'
+        self.AerosolCoeff_File = 'AerosolCoeff.bin'
+        self.CloudCoeff_File = 'CloudCoeff.bin'
     def loadInst(self):
         if ( os.path.exists( os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin') ) ):
             o = readSpcCoeff(os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin'))
-            self.nChan = o['n_Channels']
+            self.nChanTotal = o['n_Channels']
+            self.channelSubset = np.arange(self.nChanTotal,dtype=np.int16)+1
             # For those who care to associate channel number with something physical:
             # just to save sanity put the permutations of (W/w)avenumber(/s) in here so things just go.
             self.wavenumbers = np.asarray(o['Wavenumber'])
@@ -192,7 +205,19 @@ class pyCRTM:
         #Fill array with what the user specified in profile.
         for i,g in enumerate(self.usedGases):
             self.traceConc[:,:,i] = self.profiles._asdict()[g][:,:]
-            self.traceIds[i] = gases[g]    
+            self.traceIds[i] = gases[g]
+    def setupSubset(self):
+        pyIdx = self.channelSubset - 1
+        self.wavenumbers = self.wavenumbers[pyIdx] 
+        self.wavenumber = self.wavenumber[pyIdx]
+        self.Wavenumber = self.Wavenumber[pyIdx]
+        self.Wavenumbers = self.Wavenumbers[pyIdx]
+        #For those more microwave oriented:
+        self.frequencyGHz = 29.9792458 * self.wavenumbers
+        self.wavelengthCm = 1.0/self.wavenumbers
+        # And those who aren't interferometer oriented (people who like um): 
+        self.wavelengthMicrons = 10000.0/self.wavenumbers
+        self.subsetOn= True            
     def runDirect(self):
         if(not len(self.surfEmisRefl)==0):
             pycrtm.emissivityreflectivity =  np.asfortranarray(self.surfEmisRefl)
@@ -209,9 +234,22 @@ class pyCRTM:
             pycrtm.cloudeffectiveradius = self.profiles.clouds[:,:,:,1]
             pycrtm.cloudconcentration = self.profiles.clouds[:,:,:,0]
             pycrtm.cloudfraction =  self.profiles.cloudFraction
-
+        # setup stuff for channel subsetting
+        self.channelSubset = np.asarray(self.channelSubset)
+        if( not self.subsetOn and  self.channelSubset.shape[0] != self.nChanTotal):
+            self.nChan = self.channelSubset.shape[0]
+            self.setupSubset()
+        if(not self.subsetOn):
+            self.nChan = self.nChanTotal
+        else:
+            self.nChan = self.channelSubset.shape[0]
+ 
         self.Bt = pycrtm.wrap_forward( self.coefficientPath, 
-                                       self.sensor_id, 
+                                       self.sensor_id,
+                                       self.channelSubset,
+                                       self.subsetOn,
+                                       self.AerosolCoeff_File,
+                                       self.CloudCoeff_File, 
                                        self.IRwaterCoeff_File,
                                        self.MWwaterCoeff_File, 
                                        self.output_tb_flag,
@@ -225,7 +263,6 @@ class pyCRTM:
                                        self.profiles.DateTimes[:,0],
                                        self.profiles.DateTimes[:,1],
                                        self.profiles.DateTimes[:,2],
-                                       self.nChan,
                                        self.profiles.Pi, 
                                        self.profiles.P, 
                                        self.profiles.T,
@@ -267,9 +304,21 @@ class pyCRTM:
             pycrtm.cloudeffectiveradius = self.profiles.clouds[:,:,:,1]
             pycrtm.cloudconcentration = self.profiles.clouds[:,:,:,0]
             pycrtm.cloudfraction =  self.profiles.cloudFraction
-
+        self.channelSubset = np.asarray(self.channelSubset)
+        if( not self.subsetOn and  self.channelSubset.shape[0]!= self.nChanTotal):
+            self.setupSubset()
+ 
+        if(not self.subsetOn):
+            self.nChan = self.nChanTotal
+        else:
+            self.nChan = self.channelSubset.shape[0]
+        
         self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK  =  pycrtm.wrap_k_matrix(  self.coefficientPath,
-                                                                                                                                         self.sensor_id, 
+                                                                                                                                         self.sensor_id,
+                                                                                                                                         self.channelSubset,
+                                                                                                                                         self.subsetOn,
+                                                                                                                                         self.AerosolCoeff_File,
+                                                                                                                                         self.CloudCoeff_File, 
                                                                                                                                          self.IRwaterCoeff_File,
                                                                                                                                          self.MWwaterCoeff_File,
                                                                                                                                          self.output_tb_flag,
@@ -283,7 +332,6 @@ class pyCRTM:
                                                                                                                                          self.profiles.DateTimes[:,0], 
                                                                                                                                          self.profiles.DateTimes[:,1],
                                                                                                                                          self.profiles.DateTimes[:,2],
-                                                                                                                                         self.nChan, 
                                                                                                                                          self.profiles.Pi, 
                                                                                                                                          self.profiles.P, 
                                                                                                                                          self.profiles.T, 
