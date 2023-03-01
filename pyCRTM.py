@@ -200,7 +200,7 @@ class pyCRTM:
         max_abs = len(self.usedGases)
         nprof, nlay = self.profiles.T.shape 
         self.traceConc = np.zeros([nprof,nlay,max_abs])
-        self.traceIds = np.zeros(max_abs, dtype=np.int)
+        self.traceIds = np.zeros(max_abs, dtype=int)
 
         #Fill array with what the user specified in profile.
         for i,g in enumerate(self.usedGases):
