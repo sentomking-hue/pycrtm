@@ -406,7 +406,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   REAL(KIND=8), INTENT(OUT) :: aerosolEffectiveRadiusJac(nchan_jac,nprof_jac,nlayers_jac,naerosols_jac) !(nChan,N_Profiles,N_layers, N_aerosols)
   REAL(KIND=8), INTENT(OUT) :: aerosolConcentrationJac(nchan_jac,nprof_jac,nlayers_jac,naerosols_jac)   !(nChan,N_profiles,N_layers, N_aerosols)
   INTEGER,      INTENT(IN) :: nthreads
-  REAL(KIND=8) :: tmpV
   CHARACTER(len=256) :: sensor_id(1)
   ! ============================================================================
   ! STEP 2. **** SET UP SOME PARAMETERS FOR THE CRTM RUN ****
@@ -474,7 +473,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CALL check_and_allocate_globals(output_transmission_flag, N_Profiles, nChan, N_layers)
   ! figure out how to allocate aerosols/clouds and are the even turned on by the user?
   CALL aerosols_and_clouds_on( N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
-  !print*,'whirrrr naero,njac',N_aerosols_crtm,naerosols_jac
   WRITE( *,'(/5x,"Initializing the CRTM...")' )
 
   err_stat = CRTM_Init( sensor_id,  chinfo, &

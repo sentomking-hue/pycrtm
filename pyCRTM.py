@@ -299,7 +299,7 @@ class pyCRTM:
         else: use_passed=False                  
         self.setupGases() 
        
-        print(pycrtm.wrap_k_matrix.__doc__) 
+        #print(pycrtm.wrap_k_matrix.__doc__) 
         if('aerosolType' in list(self.profiles._asdict().keys())): 
             pycrtm.aerosoltype = self.profiles.aerosolType
             pycrtm.aerosoleffectiveradius = self.profiles.aerosols[:,:,:,1]
