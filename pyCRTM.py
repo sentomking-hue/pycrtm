@@ -76,7 +76,7 @@ def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=
     # surftype, water type
     p['SurfType'] = np.nan*np.zeros([nProfiles,2])
     # latitude, longitude, elevation 
-    p['SurfGeom'] = np.nan*np.zeros([nProfiles,3])
+    p['SurfGeom'] = np.zeros([nProfiles,3])
     # yy, mm, dd, hh, mm, ss
     p['DateTimes'] = np.zeros([nProfiles,6], dtype=int) 
     p['DateTimes'][:,0] = 2001
@@ -158,6 +158,8 @@ class pyCRTM:
         self.subsetOn = False
         self.nChan = 0
         self.output_tb_flag = True
+        self.output_cloud_jac = False
+        self.output_aerosol_jac = False
         self.StoreTrans = True
         self.StoreEmis = True
         self.nThreads = 1
@@ -257,7 +259,10 @@ class pyCRTM:
                                        self.profiles.Angles[:,0], 
                                        self.profiles.Angles[:,4], 
                                        self.profiles.Angles[:,1], 
-                                       self.profiles.Angles[:,2:4], 
+                                       self.profiles.Angles[:,2:4],
+                                       self.profiles.SurfGeom[:,0], 
+                                       self.profiles.SurfGeom[:,1], 
+                                       self.profiles.SurfGeom[:,2], 
                                        self.StoreEmis,
                                        use_passed,
                                        self.profiles.DateTimes[:,0],
@@ -294,7 +299,7 @@ class pyCRTM:
         else: use_passed=False                  
         self.setupGases() 
        
-        #print(pycrtm.wrap_k_matrix.__doc__) 
+        print(pycrtm.wrap_k_matrix.__doc__) 
         if('aerosolType' in list(self.profiles._asdict().keys())): 
             pycrtm.aerosoltype = self.profiles.aerosolType
             pycrtm.aerosoleffectiveradius = self.profiles.aerosols[:,:,:,1]
@@ -307,13 +312,27 @@ class pyCRTM:
         self.channelSubset = np.asarray(self.channelSubset)
         if( not self.subsetOn and  self.channelSubset.shape[0]!= self.nChanTotal):
             self.setupSubset()
- 
+        self.nChan_jac = 0
         if(not self.subsetOn):
             self.nChan = self.nChanTotal
         else:
             self.nChan = self.channelSubset.shape[0]
-        
-        self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK  =  pycrtm.wrap_k_matrix(  self.coefficientPath,
+        if(self.output_cloud_jac):
+            cld_dims = self.profiles.clouds.shape
+            self.nChan_jac = self.nChan
+        else:
+            cld_dims = [0,0,0] 
+        if(self.output_aerosol_jac):
+            aer_dims = self.profiles.aerosols.shape
+            self.nChan_jac = self.nChan
+        else:
+            aer_dims = [0,0,0]
+         
+        jac_1_dim = max(aer_dims[0],cld_dims[0])
+        jac_2_dim = max(aer_dims[1],cld_dims[1])
+        self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK,\
+        self.CloudEffectiveRadiusJac, self.CloudConcentrationJac, self.CloudFractionJac,\
+        self.AerosolEffectiveRadiusJac, self.AerosolConcentrationJac                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
                                                                                                                                          self.sensor_id,
                                                                                                                                          self.channelSubset,
                                                                                                                                          self.subsetOn,
@@ -323,15 +342,25 @@ class pyCRTM:
                                                                                                                                          self.MWwaterCoeff_File,
                                                                                                                                          self.output_tb_flag,
                                                                                                                                          self.StoreTrans,
+                                                                                                                                         self.output_cloud_jac,
+                                                                                                                                         self.output_aerosol_jac,
                                                                                                                                          self.profiles.Angles[:,0], 
                                                                                                                                          self.profiles.Angles[:,4], 
                                                                                                                                          self.profiles.Angles[:,1], 
-                                                                                                                                         self.profiles.Angles[:,2:4], 
+                                                                                                                                         self.profiles.Angles[:,2:4],
+                                                                                                                                         self.profiles.SurfGeom[:,0], 
+                                                                                                                                         self.profiles.SurfGeom[:,1], 
+                                                                                                                                         self.profiles.SurfGeom[:,2], 
                                                                                                                                          self.StoreEmis,  
                                                                                                                                          use_passed, 
                                                                                                                                          self.profiles.DateTimes[:,0], 
                                                                                                                                          self.profiles.DateTimes[:,1],
                                                                                                                                          self.profiles.DateTimes[:,2],
+                                                                                                                                         self.nChan_jac,
+                                                                                                                                         jac_1_dim,
+                                                                                                                                         jac_2_dim,
+                                                                                                                                         cld_dims[2],
+                                                                                                                                         aer_dims[2],
                                                                                                                                          self.profiles.Pi, 
                                                                                                                                          self.profiles.P, 
                                                                                                                                          self.profiles.T, 
@@ -370,4 +399,4 @@ class pyCRTM:
 
         if(self.StoreEmis):
             self.surfEmisRefl = pycrtm.emissivityreflectivity
-
+            
