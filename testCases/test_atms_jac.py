@@ -49,7 +49,7 @@ def main(sensor_id,plotme):
         profiles.surfaceTypes[i,3] = h5['waterType'][()]
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
-        storedTb.append(np.asarray(h5['Tb_cris']))
+        storedTb.append(np.asarray(h5['Tb_atms']))
         storedEmis.append(np.asarray(h5['emissivity_cris']))
         h5.close()
 
@@ -57,7 +57,7 @@ def main(sensor_id,plotme):
     crtmOb.profiles = profiles
     crtmOb.sensor_id = sensor_id
     crtmOb.nThreads = 1
-    crtmOb.output_aerosol_jac = True
+    crtmOb.output_aerosol_jac = False
     crtmOb.output_cloud_jac = True
     crtmOb.loadInst()
 
@@ -69,26 +69,25 @@ def main(sensor_id,plotme):
     crtmOb.runK()
     kTb = crtmOb.Bt
     kEmissivity = crtmOb.surfEmisRefl[0,:]
-    zz1=crtmOb.AerosolEffectiveRadiusJac
-    zz2=crtmOb.AerosolConcentrationJac
+    #zz1=crtmOb.AerosolEffectiveRadiusJac
+    #zz2=crtmOb.AerosolConcentrationJac
 
     zz3=crtmOb.CloudEffectiveRadiusJac
     zz4=crtmOb.CloudConcentrationJac
     zz5=crtmOb.CloudFractionJac
 
-    tst1 =np.abs(np.max(np.abs(zz1)) - 3.7771699512550656) < 1e-6
-    tst2 = np.abs(np.max(np.abs(zz2)) - 2135.08434845813 ) < 1e-6
     
 
-    tst3 = np.abs(np.max(np.abs(zz3)) - 0.00428447655688215) < 1e-6
-    tst4 = np.abs(np.max(np.abs(zz4)) - 3.1943929933534806e-06) < 1e-8
-    tst5 = np.abs(np.max(np.abs(zz5)) - 3.69853793060908) <1e-6
-    if(tst1 and tst2):
-        print("Yay! Aerosol Jacobians Pass.")
-    else:
-       print("Boo! Aerosol Jacobians Fail.")
-       print("Effective Radius Test",tst1)
-       print("Concentratoin Test",tst2)
+    tt3 = np.max(np.abs(zz3))
+    tt4 = np.max(np.abs(zz4))
+    tt5 = np.max(np.abs(zz5))
+    print(tt3,tt4,tt5) 
+    
+
+    tst3 = np.abs(tt3 - 0.0038721860661754936 ) < 1e-6
+    tst4 = np.abs(tt4 - 0.0004263727637941914) < 1e-6
+    tst5 = np.abs(tt5 - 8.64889289657344) <1e-8
+
     if(tst3 and tst4 and tst5):
         print("Yay! Cloud Jacobians Pass.")
     else:
@@ -100,11 +99,13 @@ def main(sensor_id,plotme):
         for i,c in enumerate(cases):
             #ignore first two profiles, because cloud fraction set to zero.
             if(i>1):
-                f,(ax_cld_jac0,ax_cld_jac1,ax_cld_jac2,ax_cld_conc) = plt.subplots( ncols=4,nrows=1,figsize=(12,5) )
-                pgrid,nu_grid = np.meshgrid(crtmOb.wavenumber[:],profiles.P[i,:])
-                s1 = ax_cld_jac0.contourf(pgrid,nu_grid,zz3[:,i,:,0].T)
-                s2 = ax_cld_jac1.contourf(pgrid,nu_grid,zz4[:,i,:,0].T)
-                s3 = ax_cld_jac2.contourf(pgrid,nu_grid,zz5[:,i,:].T)
+                f,(ax_cld_jac0,ax_cld_jac1,ax_cld_jac2,ax_cld_conc) = plt.subplots( ncols=4,nrows=1,figsize=(24,5) )
+                chans = np.arange(1,23,1)
+                freq = crtmOb.frequencyGHz
+                pgrid,nu_grid = np.meshgrid(chans,profiles.P[i,:])
+                s1 = ax_cld_jac0.scatter(pgrid,nu_grid,c=zz3[:,i,:,0].T,s=3)
+                s2 = ax_cld_jac1.scatter(pgrid,nu_grid,c=zz4[:,i,:,0].T,s=3 )
+                s3 = ax_cld_jac2.scatter(pgrid,nu_grid,c=zz5[:,i,:].T,s=3 )
                 ax_cld_conc.scatter(profiles.clouds[i,:,0,0],profiles.P[i,:])
                 #ax_cld_conc.scatter(profiles.cloudFraction[i,:],profiles.P[i,:])
 
@@ -113,33 +114,20 @@ def main(sensor_id,plotme):
                 ax_cld_jac1.invert_yaxis()
                 ax_cld_jac2.invert_yaxis()
                 ax_cld_jac0.set_ylabel('Pressure [hPa]')
-                ax_cld_jac0.set_xlabel('Wavenumber [cm$^{-1}$]')
-                ax_cld_jac1.set_xlabel('Wavenumber [cm$^{-1}$]')
-                ax_cld_jac2.set_xlabel('Wavenumber [cm$^{-1}$]')
+                ax_cld_jac0.set_xlabel('Channel')
+                ax_cld_jac1.set_xlabel('Channel')
+                ax_cld_jac2.set_xlabel('Channel')
+
+                ax_cld_jac0.set_xticks(chans)
+                ax_cld_jac1.set_xticks(chans)
+                ax_cld_jac2.set_xticks(chans)
                 ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
                 f.colorbar(s1,label='R$_e$ [$\mu$m K$^{-1}$]')
                 f.colorbar(s2,label='Concentration Jacobian [kg m$^{-2}$ K$^{-1}$]')
                 f.colorbar(s3,label='Fraction Jacobian [K$^{-1}$]')
                 plt.tight_layout()
                 plt.savefig(sensor_id+'_'+c+'_cloud_jacobian.png')
-        for i,c in enumerate(cases):
-            f,(ax_aer_jac0,ax_aer_jac1,ax_aer_conc) = plt.subplots( ncols=3,nrows=1,figsize=(12,5) )
-            pgrid,nu_grid = np.meshgrid(crtmOb.wavenumber[:],profiles.P[i,:])
-            s1 = ax_aer_jac0.contourf(pgrid,nu_grid,zz1[:,i,:,0].T)
-            s2 = ax_aer_jac1.contourf(pgrid,nu_grid,zz2[:,i,:,0].T)
-            ax_aer_conc.scatter(profiles.aerosols[i,:,0,0],profiles.P[i,:])
-
-            ax_aer_conc.invert_yaxis()
-            ax_aer_jac0.invert_yaxis()
-            ax_aer_jac1.invert_yaxis()
-            ax_aer_jac0.set_ylabel('Pressure [hPa]')
-            ax_aer_jac0.set_xlabel('Wavenumber [cm$^{-1}$]')
-            ax_aer_jac1.set_xlabel('Wavenumber [cm$^{-1}$]')
-            ax_aer_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
-            f.colorbar(s1,label='R$_e$ [$\mu$m K$^{-1}$]')
-            f.colorbar(s2,label='Concentration Jacobian [kg m$^{-2}$ K$^{-1}$]')
-            plt.tight_layout()
-            plt.savefig(sensor_id+'_'+c+'_aerosol_jacobian.png')
+       
   
 
     if ( all( np.abs( forwardTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5) ):
@@ -169,6 +157,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = "Jacobian output test for CrIS NSR.")
     parser.add_argument('--plot',help="Plot Jacobians flag",dest='plotme',action='store_true')
     a = parser.parse_args()
-    sensor_id = 'cris_npp'
+    sensor_id = 'atms_npp'
     main(sensor_id,a.plotme)
  
