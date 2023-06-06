@@ -81,7 +81,6 @@ def main(sensor_id,plotme):
     tt3 = np.max(np.abs(zz3))
     tt4 = np.max(np.abs(zz4))
     tt5 = np.max(np.abs(zz5))
-    print(tt3,tt4,tt5) 
     
 
     tst3 = np.abs(tt3 - 0.0038721860661754936 ) < 1e-6

@@ -423,7 +423,7 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CHARACTER(256) :: version
   INTEGER :: err_stat, alloc_stat
   INTEGER :: n_channels, N_aerosols_crtm, N_clouds_crtm
-  INTEGER :: l, n, i_abs,ncld, na,il
+  INTEGER :: l, n, i_abs,ncld, na
   LOGICAL :: cloudsOn, aerosolsOn
 
 
@@ -675,12 +675,10 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
            dexp(-1.0* cumsum( rts(l,n)%Layer_Optical_Depth ) ) 
       END IF
       IF (output_cloud_jac) then
-           DO ncld=1,N_clouds_crtm
-               Do il=1,n_layers
-                   cloudEffectiveRadiusJac(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Effective_Radius(1:n_layers) 
-                   cloudConcentrationJac(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Water_Content(1:n_layers)
-               END DO
-           END DO 
+          DO ncld=1,N_clouds_crtm
+              cloudEffectiveRadiusJac(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Effective_Radius(1:n_layers) 
+              cloudConcentrationJac(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Water_Content(1:n_layers)
+          END DO 
           cloudFractionJac(l,n,1:n_layers)        = atm_k(l,n)%Cloud_Fraction(1:n_layers)
       ENDIF
       IF (output_aerosol_jac) then
