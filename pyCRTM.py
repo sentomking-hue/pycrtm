@@ -158,8 +158,8 @@ class pyCRTM:
         self.subsetOn = False
         self.nChan = 0
         self.output_tb_flag = True
-        self.output_cloud_jac = False
-        self.output_aerosol_jac = False
+        self.output_cloud_K = False
+        self.output_aerosol_K = False
         self.StoreTrans = True
         self.StoreEmis = True
         self.nThreads = 1
@@ -317,22 +317,22 @@ class pyCRTM:
             self.nChan = self.nChanTotal
         else:
             self.nChan = self.channelSubset.shape[0]
-        if(self.output_cloud_jac):
+        if(self.output_cloud_K):
             cld_dims = self.profiles.clouds.shape
-            self.nChan_jac = self.nChan
+            self.nChan_jacobian = self.nChan
         else:
             cld_dims = [0,0,0] 
-        if(self.output_aerosol_jac):
+        if(self.output_aerosol_K):
             aer_dims = self.profiles.aerosols.shape
-            self.nChan_jac = self.nChan
+            self.nChan_jacobian = self.nChan
         else:
             aer_dims = [0,0,0]
          
         jac_1_dim = max(aer_dims[0],cld_dims[0])
         jac_2_dim = max(aer_dims[1],cld_dims[1])
         self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK,\
-        self.CloudEffectiveRadiusJac, self.CloudConcentrationJac, self.CloudFractionJac,\
-        self.AerosolEffectiveRadiusJac, self.AerosolConcentrationJac                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
+        self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
+        self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
                                                                                                                                          self.sensor_id,
                                                                                                                                          self.channelSubset,
                                                                                                                                          self.subsetOn,
@@ -342,8 +342,8 @@ class pyCRTM:
                                                                                                                                          self.MWwaterCoeff_File,
                                                                                                                                          self.output_tb_flag,
                                                                                                                                          self.StoreTrans,
-                                                                                                                                         self.output_cloud_jac,
-                                                                                                                                         self.output_aerosol_jac,
+                                                                                                                                         self.output_cloud_K,
+                                                                                                                                         self.output_aerosol_K,
                                                                                                                                          self.profiles.Angles[:,0], 
                                                                                                                                          self.profiles.Angles[:,4], 
                                                                                                                                          self.profiles.Angles[:,1], 
@@ -356,7 +356,7 @@ class pyCRTM:
                                                                                                                                          self.profiles.DateTimes[:,0], 
                                                                                                                                          self.profiles.DateTimes[:,1],
                                                                                                                                          self.profiles.DateTimes[:,2],
-                                                                                                                                         self.nChan_jac,
+                                                                                                                                         self.nChan_jacobian,
                                                                                                                                          jac_1_dim,
                                                                                                                                          jac_2_dim,
                                                                                                                                          cld_dims[2],

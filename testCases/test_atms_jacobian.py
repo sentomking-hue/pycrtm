@@ -57,8 +57,8 @@ def main(sensor_id,plotme):
     crtmOb.profiles = profiles
     crtmOb.sensor_id = sensor_id
     crtmOb.nThreads = 1
-    crtmOb.output_aerosol_jac = False
-    crtmOb.output_cloud_jac = True
+    crtmOb.output_aerosol_K = False
+    crtmOb.output_cloud_K = True
     crtmOb.loadInst()
 
     crtmOb.runDirect()
@@ -69,12 +69,10 @@ def main(sensor_id,plotme):
     crtmOb.runK()
     kTb = crtmOb.Bt
     kEmissivity = crtmOb.surfEmisRefl[0,:]
-    #zz1=crtmOb.AerosolEffectiveRadiusJac
-    #zz2=crtmOb.AerosolConcentrationJac
 
-    zz3=crtmOb.CloudEffectiveRadiusJac
-    zz4=crtmOb.CloudConcentrationJac
-    zz5=crtmOb.CloudFractionJac
+    zz3=crtmOb.CloudEffectiveRadiusK
+    zz4=crtmOb.CloudConcentrationK
+    zz5=crtmOb.CloudFractionK
 
     
 
