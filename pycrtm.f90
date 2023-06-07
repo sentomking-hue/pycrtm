@@ -9,6 +9,8 @@ INTEGER,      ALLOCATABLE :: aerosolType(:,:)                   !(N_Profiles, N_
 
 REAL(KIND=8), ALLOCATABLE :: cloudEffectiveRadius(:,:,:) !(N_Profiles,N_layers, N_clouds)
 REAL(KIND=8), ALLOCATABLE :: cloudConcentration(:,:,:)   !(N_profiles,N_layers, N_clouds)
+
+
 REAL(KIND=8), ALLOCATABLE :: cloudFraction(:,:)          !(N_profiles,N_layers)
 INTEGER,      ALLOCATABLE :: cloudType(:,:)                   !(N_Profiles, N_clouds)
 
@@ -19,6 +21,7 @@ CONTAINS
 SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag,  zenithAngle, scanAngle, azimuthAngle, solarAngle, &
+                        surf_lat, surf_lon, surf_height, & 
                         output_emissivity_flag, use_passed_emissivity, & 
                         year, month, day, & 
                         nChan,N_Profiles, N_LAYERS, N_trace, &
@@ -52,6 +55,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   INTEGER,      INTENT(IN) :: nChan, N_Profiles, N_Layers, N_trace
   REAL(KIND=8), INTENT(IN) :: zenithAngle(n_profiles), scanAngle(n_profiles) 
   REAL(KIND=8), INTENT(IN) :: azimuthAngle(n_profiles), solarAngle(n_profiles,2)
+  REAL(KIND=8), INTENT(IN) :: surf_lat(n_profiles), surf_lon(n_profiles), surf_height(n_profiles)
   INTEGER,      INTENT(IN) :: year(n_profiles), month(n_profiles), day(n_profiles) 
   REAL(KIND=8), INTENT(IN) :: pressureLevels(N_profiles, N_LAYERS+1)
   REAL(KIND=8), INTENT(IN) :: pressureLayers(N_profiles, N_LAYERS), temperatureLayers(N_Profiles,N_Layers)
@@ -212,6 +216,9 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
                                Sensor_Zenith_Angle  = zenithAngle(n),   &
                                Sensor_Scan_Angle    = scanAngle(n),     & 
                                Sensor_Azimuth_Angle = azimuthAngle(n),  &  
+                               Longitude = surf_lon(n),  &  
+                               Latitude = surf_lat(n),  &  
+                               Surface_Altitude = surf_height(n),  &  
                                Source_Zenith_Angle  = solarAngle(n,1),  & 
                                Source_Azimuth_Angle = solarAngle(n,2) )
     ! ==========================================================================
@@ -326,10 +333,14 @@ end SUBROUTINE wrap_forward
 
 SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
-                        output_tb_flag, output_transmission_flag, zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
+                        output_tb_flag, output_transmission_flag, output_cloud_jacobian,output_aerosol_jacobian, & 
+                        zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
+                        surf_lat, surf_lon, surf_height, &
                         output_emissivity_flag, use_passed_emissivity, & 
                         year, month, day, & 
-                        nChan, N_profiles, N_LAYERS, N_trace, & 
+                        nChan, N_profiles, N_LAYERS, N_trace, &
+                        nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian, & 
+                        naerosols_jacobian, & 
                         pressureLevels, pressureLayers, temperatureLayers, & 
                         traceConcLayers, trace_IDs, & 
                         climatology, & 
@@ -337,8 +348,9 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
                         landType, soilType, vegType, waterType, snowType, iceType, &  
                         nthreads, outTb, & 
                         temperatureJacobian, traceJacobian, skinK, emisK, reflK, &
-                        windSpeedK, windDirectionK )      
-
+                        windSpeedK, windDirectionK, &
+                        cloudEffectiveRadiusJacobian, cloudConcentrationJacobian, cloudFractionJacobian, &
+                        aerosolEffectiveRadiusJacobian, aerosolConcentrationJacobian)
   ! ============================================================================
   ! STEP 1. **** ENVIRONMENT SETUP FOR CRTM USAGE ****
   !
@@ -365,12 +377,14 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
   CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
   LOGICAL, INTENT(IN) :: subset_on,output_tb_flag, output_transmission_flag, output_emissivity_flag
-  LOGICAL, INTENT(IN) :: use_passed_emissivity 
+  LOGICAL, INTENT(IN) :: output_cloud_jacobian,output_aerosol_jacobian, use_passed_emissivity 
   INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
+  INTEGER, INTENT(IN) :: nchan_jacobian, nprof_jacobian, nlayers_jacobian, nclouds_jacobian,naerosols_jacobian 
   ! The scan angle is based
   ! on the default Re (earth radius) and h (satellite height)
   REAL(KIND=8), INTENT(IN) :: zenithAngle(N_profiles), scanAngle(N_profiles)
   REAL(KIND=8), INTENT(IN) :: azimuthAngle(N_profiles), solarAngle(N_profiles,2)
+  REAL(KIND=8), INTENT(IN) :: surf_lat(n_profiles), surf_lon(n_profiles), surf_height(n_profiles)
   INTEGER,      INTENT(IN) :: year(n_profiles), month(n_profiles), day(n_profiles)
   REAL(KIND=8), INTENT(IN) :: pressureLevels(N_profiles, N_Layers+1)
   REAL(KIND=8), INTENT(IN) :: pressureLayers(N_profiles, N_layers), temperatureLayers(N_profiles, N_layers)
@@ -386,8 +400,12 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   REAL(KIND=8), INTENT(OUT) :: windSpeedK(N_profiles,nChan), windDirectionK(N_profiles,nChan)
   REAL(KIND=8), INTENT(OUT) :: temperatureJacobian(N_profiles, nChan, N_LAYERS)
   REAL(KIND=8), INTENT(OUT) :: traceJacobian(N_profiles, nChan, N_LAYERS, N_trace)
+  REAL(KIND=8), INTENT(OUT)  :: cloudEffectiveRadiusJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian) !(nChan,N_Profiles,N_layers, N_clouds)
+  REAL(KIND=8), INTENT(OUT)  :: cloudConcentrationJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian)   !(nChan,N_profiles,N_layers, N_clouds)
+  REAL(KIND=8), INTENT(OUT)  :: cloudFractionJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian)          !(nChan,N_profiles,N_layers)
+  REAL(KIND=8), INTENT(OUT) :: aerosolEffectiveRadiusJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,naerosols_jacobian) !(nChan,N_Profiles,N_layers, N_aerosols)
+  REAL(KIND=8), INTENT(OUT) :: aerosolConcentrationJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,naerosols_jacobian)   !(nChan,N_profiles,N_layers, N_aerosols)
   INTEGER,      INTENT(IN) :: nthreads
-
   CHARACTER(len=256) :: sensor_id(1)
   ! ============================================================================
   ! STEP 2. **** SET UP SOME PARAMETERS FOR THE CRTM RUN ****
@@ -405,7 +423,7 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CHARACTER(256) :: version
   INTEGER :: err_stat, alloc_stat
   INTEGER :: n_channels, N_aerosols_crtm, N_clouds_crtm
-  INTEGER :: l, n, i_abs
+  INTEGER :: l, n, i_abs,ncld, na
   LOGICAL :: cloudsOn, aerosolsOn
 
 
@@ -444,7 +462,7 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
       allocate( emissivityReflectivity( 2,N_profiles, nChan ) )
     END IF
   END IF
- 
+   
 
   ! ============================================================================
   ! STEP 4. **** INITIALIZE THE CRTM ****
@@ -453,10 +471,8 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   ! --------------------------------------
   ! allocate globals in the MODULE based upon user selection through interface.
   CALL check_and_allocate_globals(output_transmission_flag, N_Profiles, nChan, N_layers)
-
   ! figure out how to allocate aerosols/clouds and are the even turned on by the user?
   CALL aerosols_and_clouds_on( N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
-
   WRITE( *,'(/5x,"Initializing the CRTM...")' )
 
   err_stat = CRTM_Init( sensor_id,  chinfo, &
@@ -565,7 +581,10 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
                                day = day(n), & 
                                Sensor_Zenith_Angle  = zenithAngle(n),   &
                                Sensor_Scan_Angle    = scanAngle(n),     & 
-                               Sensor_Azimuth_Angle = azimuthAngle(n),  &  
+                               Sensor_Azimuth_Angle = azimuthAngle(n),  &
+                               Longitude = surf_lon(n),  &  
+                               Latitude = surf_lat(n),  &  
+                               Surface_Altitude = surf_height(n),  &  
                                Source_Zenith_Angle  = solarAngle(n,1),  & 
                                Source_Azimuth_Angle = solarAngle(n,2) )
 
@@ -655,6 +674,19 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
            outTransmission(n, l,1:n_layers) = & 
            dexp(-1.0* cumsum( rts(l,n)%Layer_Optical_Depth ) ) 
       END IF
+      IF (output_cloud_jacobian) then
+          DO ncld=1,N_clouds_crtm
+              cloudEffectiveRadiusJacobian(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Effective_Radius(1:n_layers) 
+              cloudConcentrationJacobian(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Water_Content(1:n_layers)
+          END DO 
+          cloudFractionJacobian(l,n,1:n_layers)        = atm_k(l,n)%Cloud_Fraction(1:n_layers)
+      ENDIF
+      IF (output_aerosol_jacobian) then
+           DO na=1,N_aerosols_crtm
+               aerosolEffectiveRadiusJacobian(l,n,1:n_layers,na) = atm_k(l,n)%aerosol(na)%Effective_Radius(1:n_layers)
+               aerosolConcentrationJacobian(l,n,1:n_layers,na) = atm_k(l,n)%aerosol(na)%Concentration(1:n_layers)
+           END DO 
+      ENDIF 
     END DO
   END DO
 
@@ -674,7 +706,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
       emissivityReflectivity(2,n,:) = rts(:,n)%Surface_Reflectivity
     END DO
   END IF
-
   CALL CRTM_Atmosphere_Destroy(atm)
   CALL CRTM_Atmosphere_Destroy(atm_k)
   CALL crtm_options_destroy(options)
@@ -717,6 +748,7 @@ END SUBROUTINE wrap_k_matrix
     IF ( allocated(outTransmission) ) deallocate(outTransmission)
     allocate( outTransmission(N_Profiles, nChan, N_layers) ) 
   END IF
+
   end SUBROUTINE check_and_allocate_globals
 
   SUBROUTINE aerosols_and_clouds_on(N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
