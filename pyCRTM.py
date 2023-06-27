@@ -157,6 +157,7 @@ class pyCRTM:
         self.channelSubset = []
         self.subsetOn = False
         self.nChan = 0
+        self.nChan_jacobian = 0
         self.output_tb_flag = True
         self.output_cloud_K = False
         self.output_aerosol_K = False
