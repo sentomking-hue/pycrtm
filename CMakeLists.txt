@@ -6,10 +6,10 @@ find_package(F2PY REQUIRED)
 find_package(PythonLibs REQUIRED)
 find_package(Python3 REQUIRED COMPONENTS NumPy)
 find_package( OpenMP COMPONENTS Fortran )
-find_package( NetCDF REQUIRED COMPONENTS Fortran )
+find_package( NetCDF REQUIRED COMPONENTS Fortran)
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${_Python3_NumPy_INCLUDE_DIR})
-include_directories(${NetCDF_INCLUDE_DIRS})
+include_directories(NetCDF_F90_INCLUDE_DIRS)
 get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
 set(crtm_INCLUDE $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
 set(crtm_LIB $ENV{CRTM_INSTALL}/lib/)
@@ -41,9 +41,8 @@ add_custom_command(
     ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
     ${fortran_src_file}
     -I${crtm_INCLUDE}
-    -I${NetCDF_INCLUDE_DIRS}
+    -I${NETCDF_FORTRAN_INCLUDE_DIRS}
     -L${CDF_LIB_PATH}
-    -L${NetCDF_INCLUDE_DIRS}
     -L${crtm_LIB}
     -lcrtm
     -lnetcdff
