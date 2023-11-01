@@ -5,9 +5,46 @@ import numpy as np
 from matplotlib import pyplot as plt
 thisDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,thisDir)
-#get around extra wrapper layer thanks to scikit-build
-from pycrtm import pycrtm as p
-pycrtm = p.pycrtm
+# try to load pycrtm assuming crtm is built with static library
+try:
+    from pycrtm import pycrtm as p
+    pycrtm = p.pycrtm
+except:
+    # Nope! Not static, ok FINE be like that. Add to LD_LIBRARY_PATH to find libcrtm.so
+    # Add LD_LIBRARY_PATH if crtm is a shared library
+    # First part get the crtm install directory from setup.txt 
+    cfg = configparser.ConfigParser()
+    if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
+        pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
+    else:
+        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.1.dist-info','RECORD'))
+        lines = f.readlines()
+        for l in lines:
+            if('pycrtm_setup.txt' in l):
+                pycrtm_setup_dir = l.split('.txt')[0]
+                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+    cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
+    setupdir = cfg['Setup']['crtm_install']
+
+    #next part set the LD_LIBRARY_PATH to make it possible to used shared object. 
+    libdir = " "
+    if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
+        libdir = os.path.join( setupdir, 'lib')
+    elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
+        libdir = os.path.join( setupdir, 'lib64') 
+    old_ld = os.environ.get("LD_LIBRARY_PATH")
+    if old_ld:
+        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
+            os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
+            os.execv(sys.argv[0], sys.argv)
+    else:
+        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
+            os.environ["LD_LIBRARY_PATH"] = libdir
+            os.execv(sys.argv[0], sys.argv)
+    
+    from pycrtm import pycrtm as p
+    pycrtm = p.pycrtm
+
 from crtm_io import readSpcCoeff
 from collections import namedtuple
 # Absorber IDs taken from CRTM.
