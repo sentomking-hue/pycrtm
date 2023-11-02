@@ -159,10 +159,7 @@ class pyCRTM:
                     pycrtm_setup_dir = l.split('.txt')[0]
                     pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
         cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
-        if(cfg['Setup']['coef_with_install'] == 'False'):
-            self.coefficientPath = cfg['Coefficients']['path']+"/"
-        else:
-            self.coefficientPath = os.path.join(thisDir,'coefficients')+'/'
+        self.coefficientPath = cfg['Coefficients']['path_used']+"/"
 
         self.sensor_id = ''
         self.profiles = []
