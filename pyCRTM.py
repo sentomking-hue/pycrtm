@@ -1,51 +1,17 @@
 #!/usr/bin/env python3
 import configparser
-import os, h5py, sys 
+import os, sys, h5py, netCDF4
 import numpy as np
-from matplotlib import pyplot as plt
 thisDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,thisDir)
-# try to load pycrtm assuming crtm is built with static library
-try:
-    from pycrtm import pycrtm as p
-    pycrtm = p.pycrtm
-except:
-    # Nope! Not static, ok FINE be like that. Add to LD_LIBRARY_PATH to find libcrtm.so
-    # Add LD_LIBRARY_PATH if crtm is a shared library
-    # First part get the crtm install directory from setup.txt 
-    cfg = configparser.ConfigParser()
-    if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
-        pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
-    else:
-        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.1.dist-info','RECORD'))
-        lines = f.readlines()
-        for l in lines:
-            if('pycrtm_setup.txt' in l):
-                pycrtm_setup_dir = l.split('.txt')[0]
-                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
-    cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
-    setupdir = cfg['Setup']['crtm_install']
-
-    #next part set the LD_LIBRARY_PATH to make it possible to used shared object. 
-    libdir = " "
-    if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
-        libdir = os.path.join( setupdir, 'lib')
-    elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
-        libdir = os.path.join( setupdir, 'lib64') 
-    old_ld = os.environ.get("LD_LIBRARY_PATH")
-    if old_ld:
-        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
-            os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
-            os.execv(sys.argv[0], sys.argv)
-    else:
-        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
-            os.environ["LD_LIBRARY_PATH"] = libdir
-            os.execv(sys.argv[0], sys.argv)
-    
-    from pycrtm import pycrtm as p
-    pycrtm = p.pycrtm
-
-from crtm_io import readSpcCoeff
+from crtm_io import readSpcCoeff, readSpcCoeffNc, findLib, setLD_LIBRARY_PATH
+sharedLibPath = findLib(thisDir)
+# sharedLibPath has a shared object, append to LD_LIBRARY_PATH
+if(len(sharedLibPath) > 0):
+    setLD_LIBRARY_PATH(sharedLibPath)
+# load f2py pycrtm
+from pycrtm import pycrtm as p
+pycrtm = p.pycrtm
 from collections import namedtuple
 # Absorber IDs taken from CRTM.
 gases = {}
@@ -152,7 +118,7 @@ class pyCRTM:
         if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
             pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
         else:
-            f = open(os.path.join(thisDir,'pyCRTM_JCSDA-1.0.1.dist-info','RECORD'))
+            f = open(os.path.join(thisDir,'pyCRTM_JCSDA-2.0.1.dist-info','RECORD'))
             lines = f.readlines()
             for l in lines:
                 if('pycrtm_setup.txt' in l):
@@ -193,18 +159,26 @@ class pyCRTM:
         self.nChan = 0
         self.nChan_jacobian = 0
         self.output_tb_flag = True
+        self.Active = False
         self.output_cloud_K = False
         self.output_aerosol_K = False
         self.StoreTrans = True
         self.StoreEmis = True
         self.nThreads = 1
+        self.CloudNcBin = 'Binary'
+        self.AerosolNcBin = 'Binary'
         self.MWwaterCoeff_File = 'FASTEM6.MWwater.EmisCoeff.bin'
         self.IRwaterCoeff_File = 'Nalli.IRwater.EmisCoeff.bin'
         self.AerosolCoeff_File = 'AerosolCoeff.bin'
         self.CloudCoeff_File = 'CloudCoeff.bin'
     def loadInst(self):
-        if ( os.path.exists( os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin') ) ):
-            o = readSpcCoeff(os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin'))
+        binPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin')
+        ncPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc')
+        if ( os.path.exists( binPath )  ):
+            o = readSpcCoeff( binPath )
+        elif ( os.path.exists( ncPath ) ): 
+            o = readSpcCoeffNc( ncath )
+        if ( os.path.exists(ncPath) or os.path.exists(binPath)):
             self.nChanTotal = o['n_Channels']
             self.channelSubset = np.arange(self.nChanTotal,dtype=np.int16)+1
             # For those who care to associate channel number with something physical:
@@ -220,8 +194,16 @@ class pyCRTM:
             self.wavelengthMicrons = 10000.0/self.wavenumbers
             self.wmo_sensor_id = o['wmo_sensor_id']
             self.wmo_satellite_id = o['wmo_satellite_id']
+            if o['Sensor_Type'] == 101:
+                self.Active = True
+            if (self.AerosolCoeff_File.split('.')[-1] != 'bin'):
+                self.AerosolNcBin = 'netCDF'
+            
+            if (self.CloudCoeff_File.split('.')[-1] != 'bin'):
+                self.CloudNcBin = 'netCDF'
         else:
             print("Warning! {} doesn't exist!".format( os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin') ) )        
+            print("Warning! {} doesn't exist!".format( os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc') ) )        
     def setupGases(self):
 
         #If this has been run by previous call to runK or runDirect, don't run it again!
@@ -291,6 +273,8 @@ class pyCRTM:
                                        self.MWwaterCoeff_File, 
                                        self.output_tb_flag,
                                        self.StoreTrans,
+                                       self.CloudNcBin ,
+                                       self.AerosolNcBin,
                                        self.profiles.Angles[:,0], 
                                        self.profiles.Angles[:,4], 
                                        self.profiles.Angles[:,1], 
@@ -379,6 +363,8 @@ class pyCRTM:
                                                                                                                                          self.StoreTrans,
                                                                                                                                          self.output_cloud_K,
                                                                                                                                          self.output_aerosol_K,
+                                                                                                                                         self.CloudNcBin,
+                                                                                                                                         self.AerosolNcBin,
                                                                                                                                          self.profiles.Angles[:,0], 
                                                                                                                                          self.profiles.Angles[:,4], 
                                                                                                                                          self.profiles.Angles[:,1], 

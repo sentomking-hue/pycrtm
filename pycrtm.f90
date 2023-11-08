@@ -1,16 +1,13 @@
 MODULE pycrtm 
 
-REAL(KIND=8), ALLOCATABLE :: outTransmission(:, :, :) ! outTransmission(N_profiles, nChan, N_Layers)
+REAL(KIND=8), ALLOCATABLE :: outTransmission(:, :, :)          ! outTransmission(N_profiles, nChan, N_Layers)
 
 REAL(KIND=8), ALLOCATABLE :: aerosolEffectiveRadius(:,:,:) !(N_Profiles,N_layers, N_aerosols)
 REAL(KIND=8), ALLOCATABLE :: aerosolConcentration(:,:,:)   !(N_profiles,N_layers, N_aerosols)
 INTEGER,      ALLOCATABLE :: aerosolType(:,:)                   !(N_Profiles, N_aerosols)
 
-
 REAL(KIND=8), ALLOCATABLE :: cloudEffectiveRadius(:,:,:) !(N_Profiles,N_layers, N_clouds)
 REAL(KIND=8), ALLOCATABLE :: cloudConcentration(:,:,:)   !(N_profiles,N_layers, N_clouds)
-
-
 REAL(KIND=8), ALLOCATABLE :: cloudFraction(:,:)          !(N_profiles,N_layers)
 INTEGER,      ALLOCATABLE :: cloudType(:,:)                   !(N_Profiles, N_clouds)
 
@@ -20,7 +17,8 @@ CONTAINS
 
 SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
-                        output_tb_flag, output_transmission_flag,  zenithAngle, scanAngle, azimuthAngle, solarAngle, &
+                        output_tb_flag, output_transmission_flag, cld_nc, aer_nc, &
+                        zenithAngle, scanAngle, azimuthAngle, solarAngle, &
                         surf_lat, surf_lon, surf_height, & 
                         output_emissivity_flag, use_passed_emissivity, & 
                         year, month, day, & 
@@ -48,7 +46,9 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   CHARACTER(len=*), INTENT(IN) :: CloudCoeff_File
   CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
   CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
-  LOGICAL,          INTENT(IN) :: subset_on,output_tb_flag, output_transmission_flag, output_emissivity_flag 
+  LOGICAL,          INTENT(IN) :: subset_on, output_tb_flag, output_transmission_flag, output_emissivity_flag 
+  CHARACTER(len=*), INTENT(IN) :: cld_nc
+  CHARACTER(len=*), INTENT(IN) :: aer_nc
   LOGICAL,          INTENT(IN) :: use_passed_emissivity
   ! The scan angle is based
   ! on the default Re (earth radius) and h (satellite height)
@@ -136,8 +136,11 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   
   err_stat = CRTM_Init( sensor_id,  chinfo, &
                         File_Path=coefficientPath, &
+                        NC_File_Path=coefficientPath,& 
                         Load_CloudCoeff = cloudsOn, &  
                         Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_Format = cld_nc,&
+                        AerosolCoeff_Format = aer_nc,&
                         CloudCoeff_File = CloudCoeff_File, &  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
@@ -192,7 +195,6 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
 
   CALL CRTM_Atmosphere_Create( atm, N_LAYERS, N_trace, N_CLOUDS_crtm, N_AEROSOLS_crtm )
   CALL check_LOGICAL_status(ANY(.not. CRTM_Atmosphere_Associated(atm) ), "Failed in CRTM_Atmopsphere_Create")
-
   ! ==========================================================================
   ! STEP 6. **** ASSIGN INPUT DATA ****
   !
@@ -237,14 +239,12 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   !
   ! 8a. The forward model
   ! ---------------------
-
   ! Need this to get transmission out of solution, otherwise won't be allocated !!!
   CALL crtm_rtsolution_create( rts, n_layers )
   CALL check_LOGICAL_status( any(.not. crtm_rtsolution_associated( rts ) ),'rts failed to create.') 
 
   CALL crtm_options_create( options, nChan )
   CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create.' )
-  
   !err_stat = CRTM_Forward( atm        , &  ! Input
   !                         sfc        , &  ! Input
   !                         geo        , &  ! Input
@@ -261,7 +261,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
 
 
 
-  CALL check_allocate_status(err_stat, "Error CALLing CRTM_Forward.")
+  CALL check_allocate_status(err_stat, "Error CALLING CRTM_Forward.")
 
   ! ============================================================================
   ! 8c. **** OUTPUT THE RESULTS TO SCREEN **** (Or transfer it into a series of arrays out of this thing!)
@@ -333,7 +333,8 @@ end SUBROUTINE wrap_forward
 
 SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
-                        output_tb_flag, output_transmission_flag, output_cloud_jacobian,output_aerosol_jacobian, & 
+                        output_tb_flag, output_transmission_flag, output_cloud_jacobian,output_aerosol_jacobian,&
+                        cld_nc, aer_nc, & 
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
                         surf_lat, surf_lon, surf_height, &
                         output_emissivity_flag, use_passed_emissivity, & 
@@ -378,6 +379,8 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
   LOGICAL, INTENT(IN) :: subset_on,output_tb_flag, output_transmission_flag, output_emissivity_flag
   LOGICAL, INTENT(IN) :: output_cloud_jacobian,output_aerosol_jacobian, use_passed_emissivity 
+  CHARACTER(len=*), INTENT(IN) :: cld_nc
+  CHARACTER(len=*), INTENT(IN) :: aer_nc
   INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
   INTEGER, INTENT(IN) :: nchan_jacobian, nprof_jacobian, nlayers_jacobian, nclouds_jacobian,naerosols_jacobian 
   ! The scan angle is based
@@ -477,13 +480,17 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
 
   err_stat = CRTM_Init( sensor_id,  chinfo, &
                         File_Path=coefficientPath, &
+                        NC_File_Path=coefficientPath,& 
                         Load_CloudCoeff = cloudsOn, &  
                         Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_Format = cld_nc,&
+                        AerosolCoeff_Format = aer_nc,&
                         CloudCoeff_File = CloudCoeff_File, &  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
-                        MWwaterCoeff_File = MWwaterCoeff_File, &   
+                        MWwaterCoeff_File = MWwaterCoeff_File, & 
                         Quiet=.True. )
+ 
   CALL check_allocate_status(err_stat, 'Error initializing CRTM')
   IF(subset_on) then
       err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
@@ -751,6 +758,7 @@ END SUBROUTINE wrap_k_matrix
 
   end SUBROUTINE check_and_allocate_globals
 
+
   SUBROUTINE aerosols_and_clouds_on(N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
 
   INTEGER, INTENT(OUT) :: N_AEROSOLS_crtm, N_CLOUDS_crtm
@@ -820,6 +828,7 @@ END SUBROUTINE wrap_k_matrix
                          traceConcLayers, trace_IDs, & 
                          N_trace, N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
   USE CRTM_MODULE
+  
   TYPE(CRTM_Atmosphere_type), INTENT(INOUT) :: atm(:)
   INTEGER :: n,climatology
   REAL(KIND=8) :: pressureLevels(:), pressureLayers(:), temperatureLayers(:), traceConcLayers(:,:)
@@ -832,7 +841,6 @@ END SUBROUTINE wrap_k_matrix
     atm(n)%Level_Pressure = pressureLevels(:)
     atm(n)%Pressure = pressureLayers(:)
     atm(n)%Temperature = temperatureLayers(:)
-   
     DO i_abs = 1,N_trace 
       atm(n)%Absorber(:,i_abs)      = traceConcLayers(:,i_abs)
       atm(n)%Absorber_Id(i_abs)     = trace_IDs(i_abs)
@@ -858,7 +866,6 @@ END SUBROUTINE wrap_k_matrix
       END DO
       atm(n)%Cloud_Fraction(:)            = cloudFraction(n,:)
     END IF
-
   END SUBROUTINE set_profile
 
 

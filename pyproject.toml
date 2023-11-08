@@ -1,2 +1,2 @@
 [build-system]
-requires = ["setuptools", "wheel", "scikit-build", "cmake","matplotlib","h5py" ]
+requires = ["setuptools", "wheel", "scikit-build", "cmake","matplotlib","h5py","netCDF4" ]
