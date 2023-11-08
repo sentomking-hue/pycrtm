@@ -913,6 +913,311 @@ END SUBROUTINE wrap_k_matrix
         xout(j) = xout(j-1) + x(j)
     END DO
   END FUNCTION cumsum
+SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
+                        AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
+                        cld_nc, aer_nc, &
+                        zenithAngle, scanAngle, azimuthAngle, solarAngle, &
+                        surf_lat, surf_lon, surf_height, & 
+                        output_emissivity_flag, use_passed_emissivity, & 
+                        year, month, day, & 
+                        nChan,N_Profiles, N_LAYERS, N_trace, &
+                        pressureLevels, pressureLayers, temperatureLayers, & 
+                        traceConcLayers, trace_IDs, & 
+                        climatology, & 
+                        surfaceTemperatures, surfaceFractions, LAI, salinity,  windSpeed10m, windDirection10m, & 
+                        landType, soilType, vegType, waterType, snowType, iceType, nthreads, &  
+                        outReflectivity, outReflectivityAttenuated )      
+
+  ! ============================================================================
+  ! STEP 1. **** ENVIRONMENT SETUP FOR CRTM USAGE ****
+  !
+  ! MODULE usage
+  USE CRTM_MODULE
+  ! Disable all implicit typing
+  IMPLICIT NONE
+  ! ============================================================================
+  ! variables for interface
+  CHARACTER(len=*), INTENT(IN) :: coefficientPath
+  CHARACTER(len=*), INTENT(IN) :: sensor_id_in
+  INTEGER, INTENT(IN) :: channel_subset(nChan)
+  CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: CloudCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
+  LOGICAL,          INTENT(IN) :: subset_on, output_emissivity_flag 
+  CHARACTER(len=*), INTENT(IN) :: cld_nc
+  CHARACTER(len=*), INTENT(IN) :: aer_nc
+  LOGICAL,          INTENT(IN) :: use_passed_emissivity
+  ! The scan angle is based
+  ! on the default Re (earth radius) and h (satellite height)
+  INTEGER,      INTENT(IN) :: nChan, N_Profiles, N_Layers, N_trace
+  REAL(KIND=8), INTENT(IN) :: zenithAngle(n_profiles), scanAngle(n_profiles) 
+  REAL(KIND=8), INTENT(IN) :: azimuthAngle(n_profiles), solarAngle(n_profiles,2)
+  REAL(KIND=8), INTENT(IN) :: surf_lat(n_profiles), surf_lon(n_profiles), surf_height(n_profiles)
+  INTEGER,      INTENT(IN) :: year(n_profiles), month(n_profiles), day(n_profiles) 
+  REAL(KIND=8), INTENT(IN) :: pressureLevels(N_profiles, N_LAYERS+1)
+  REAL(KIND=8), INTENT(IN) :: pressureLayers(N_profiles, N_LAYERS), temperatureLayers(N_Profiles,N_Layers)
+  REAL(KIND=8), INTENT(IN) :: traceConcLayers(N_Profiles,N_layers,N_trace)
+  INTEGER,      INTENT(IN) :: trace_IDs(N_trace)
+  INTEGER,      INTENT(IN) :: climatology(N_profiles)
+  REAL(KIND=8), INTENT(IN) :: surfaceTemperatures(N_Profiles,4), surfaceFractions(N_profiles, 4)
+  REAL(KIND=8), INTENT(IN) :: LAI(N_Profiles), salinity(N_Profiles),  windSpeed10m(N_Profiles), windDirection10m(N_Profiles)
+  INTEGER,      INTENT(IN) :: landType(N_Profiles), soilType(N_Profiles), vegType(N_Profiles), waterType(N_Profiles)
+  INTEGER,      INTENT(IN) :: snowType(N_Profiles), iceType(N_Profiles) 
+  INTEGER,      INTENT(IN) :: nthreads
+  
+  REAL(KIND=8), INTENT(OUT) :: outReflectivity(N_Profiles,nChan,N_Layers) 
+  REAL(KIND=8), INTENT(OUT) :: outReflectivityAttenuated(N_Profiles,nChan,N_Layers) 
+  CHARACTER(len=256), DIMENSION(1) :: sensor_id
+  ! --------------------------
+  ! Some non-CRTM-y Parameters
+  ! --------------------------
+  CHARACTER(*), PARAMETER :: SUBROUTINE_NAME   = 'wrap_forward_active'
+  CHARACTER(*), PARAMETER :: PROGRAM_VERSION_ID = '0.01'
+
+
+
+  ! ============================================================================
+  ! STEP 2. **** SET UP SOME PARAMETERS FOR THE CRTM RUN ****
+  !
+  ! Sensor information
+  INTEGER     , PARAMETER :: N_SENSORS = 1
+  ! ============================================================================
+  
+
+
+  ! ---------
+  ! Variables
+  ! ---------
+  CHARACTER(256) :: version
+  INTEGER :: err_stat, alloc_stat
+  INTEGER :: n_channels, N_clouds_crtm, N_aerosols_crtm
+  INTEGER :: l, n
+  LOGICAL :: cloudsOn, aerosolsOn
+
+  ! ============================================================================
+  ! STEP 3. **** DEFINE THE CRTM INTERFACE STRUCTURES ****
+  !
+  ! 3a. Define the "non-demoninational" arguments
+  ! ---------------------------------------------
+  TYPE(CRTM_ChannelInfo_type)             :: chinfo(1)
+
+
+  ! 3b. Define the FORWARD variables
+  ! --------------------------------
+  TYPE(CRTM_Atmosphere_type),ALLOCATABLE  :: atm(:)
+  TYPE(CRTM_Surface_type), ALLOCATABLE    :: sfc(:)
+  TYPE(CRTM_RTSolution_type), ALLOCATABLE :: rts(:,:)
+  TYPE(CRTM_Geometry_type), ALLOCATABLE   :: geo(:)
+  TYPE(crtm_options_type) ,ALLOCATABLE    :: options(:)
+  sensor_id(1) = sensor_id_in
+  ! Program header
+  ! --------------
+  CALL CRTM_Version( Version )
+  CALL Program_Message( SUBROUTINE_NAME, &
+    'Running simulation.', &
+    'CRTM Version: '//TRIM(Version) )
+  IF (.not. allocated(emissivityReflectivity)) THEN
+    IF ( output_emissivity_flag ) THEN
+      allocate( emissivityReflectivity(2,N_profiles, nChan) )
+    END IF
+  END IF
+
+  ! ============================================================================
+  ! STEP 4. **** INITIALIZE THE CRTM ****
+  !
+  ! 4a. Initialise all the sensors at once
+  ! --------------------------------------
+  ! allocate globals in the MODULE based upon user selection through interface.
+  CALL check_and_allocate_globals(.False., N_Profiles, nChan, N_layers)
+  ! Figure out what needs allocating for Clouds and Aerosols. Are they on?
+  CALL aerosols_and_clouds_on(N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
+  
+  err_stat = CRTM_Init( sensor_id,  chinfo, &
+                        File_Path=coefficientPath, &
+                        NC_File_Path=coefficientPath,& 
+                        Load_CloudCoeff = cloudsOn, &  
+                        Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_Format = cld_nc,&
+                        AerosolCoeff_Format = aer_nc,&
+                        CloudCoeff_File = CloudCoeff_File, &  
+                        AerosolCoeff_File = AerosolCoeff_File, &
+                        IRwaterCoeff_File = IRwaterCoeff_File, & 
+                        MWwaterCoeff_File = MWwaterCoeff_File, & 
+                        Quiet=.True. )
+  CALL check_allocate_status(err_stat,'Error Initializing CRTM')
+  IF(subset_on) then
+     err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
+                                     Channel_Subset = channel_subset)
+      IF(err_stat /= 0 ) write(*,*)'error specifying channel subset'
+  END IF
+  WRITE( *,'(/5x,"Initializing the CRTM...")' )
+
+  ! 4b. Output some channel information
+  ! -----------------------------------
+  n_channels = CRTM_ChannelInfo_n_Channels(chinfo(1))
+  WRITE( *,'(/5x,"Processing a total of ",i0," channels...")' ) n_channels
+
+
+  ! ============================================================================
+
+  ! ==========================================================================
+  ! STEP 5. **** ALLOCATE STRUCTURE ARRAYS ****
+  !
+  ! 5a. Determine the number of channels
+  !     for the current sensor
+  ! ------------------------------------
+  n_channels = CRTM_ChannelInfo_n_Channels(chinfo(1))
+
+  
+  ! 5b. Allocate the ARRAYS
+  ! -----------------------
+  ! ----------------------
+  !$ CALL omp_set_num_threads(nthreads)  
+  n_channels = CRTM_ChannelInfo_n_Channels(chinfo(1))
+
+  ! 5c. Allocate the STRUCTURE INTERNALS
+  !     NOTE: Only the Atmosphere structures
+  !           are allocated in this example
+  ! ----------------------------------------
+  ! The input FORWARD structure
+  ALLOCATE( rts( n_channels, N_Profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat, "Error allocating Solution rts(n_channels,N_Profiles).")
+  ALLOCATE( atm(N_Profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat, "Error allocating atm.")
+  ALLOCATE( sfc(N_Profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat, "Error allocating sfc.")
+  ALLOCATE( geo(N_Profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat, "Error allocating geometry.")
+  ALLOCATE( options(N_Profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat, "Error allocating options.")
+
+  CALL CRTM_Atmosphere_Create( atm, N_LAYERS, N_trace, N_CLOUDS_crtm, N_AEROSOLS_crtm )
+  CALL check_LOGICAL_status(ANY(.not. CRTM_Atmosphere_Associated(atm) ), "Failed in CRTM_Atmopsphere_Create")
+  ! ==========================================================================
+  ! STEP 6. **** ASSIGN INPUT DATA ****
+  !
+  ! 6a. Atmosphere and Surface input
+  !     NOTE: that this is the hard part (in my opinion :o). The mechanism by
+  !     by which the atmosphere and surface data are loaded in to their
+  !     respective structures below was done purely to keep the step-by-step
+  !     instructions in this program relatively "clean".
+  ! ------------------------------------------------------------------------
+  ! ...Profile data
+  DO n=1,N_profiles
+    CALL set_profile(atm, n, climatology(n), pressureLevels(n,:), pressureLayers(n,:), temperatureLayers(n,:),&
+                     traceConcLayers(n,:,:), trace_IDs(:), &
+                     N_trace, N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
+    ! 6b. Geometry input
+    ! ------------------
+    CALL CRTM_Geometry_SetValue( geo(n), &
+                               year = year(n), & 
+                               month = month(n), & 
+                               day = day(n), & 
+                               Sensor_Zenith_Angle  = zenithAngle(n),   &
+                               Sensor_Scan_Angle    = scanAngle(n),     & 
+                               Sensor_Azimuth_Angle = azimuthAngle(n),  &  
+                               Longitude = surf_lon(n),  &  
+                               Latitude = surf_lat(n),  &  
+                               Surface_Altitude = surf_height(n),  &  
+                               Source_Zenith_Angle  = solarAngle(n,1),  & 
+                               Source_Azimuth_Angle = solarAngle(n,2) )
+    ! ==========================================================================
+    ! 4a.1 Profile #1
+    ! ---------------
+    ! set the surface properties for the profile.
+    CALL set_surface(sfc, n, surfaceFractions(n,:), landType(n), surfaceTemperatures(n,:), LAI(n), & 
+                         soilType(n), vegType(n), waterType(n), snowType(n), iceType(n), &
+                         windSpeed10m(n), windDirection10m(n), salinity(n))
+
+ 
+    CALL set_emissivity(options,n, use_passed_emissivity)
+  END DO
+  ! following example in unit test
+  atm%Add_Extra_Layers = .False.
+  ! ==========================================================================
+  ! STEP 8. **** CALL THE CRTM FUNCTIONS FOR THE CURRENT SENSOR ****
+  !
+  ! 8a. The forward model
+  ! ---------------------
+  ! Need this to get transmission out of solution, otherwise won't be allocated !!!
+  CALL crtm_rtsolution_create( rts, n_layers )
+  CALL check_LOGICAL_status( any(.not. crtm_rtsolution_associated( rts ) ),'rts failed to create.') 
+
+  CALL crtm_options_create( options, nChan )
+  CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create.' )
+  print*, 'crtm forward started.'
+  err_stat = CRTM_Forward( atm        , &  ! Input
+                           sfc        , &  ! Input
+                           geo        , &  ! Input
+                           chinfo     , &  ! Input
+                           rts        ) ! Output
+  
+
+
+  print*, "return from foward"
+
+  CALL check_allocate_status(err_stat, "Error CALLING CRTM_Forward.")
+
+  ! ============================================================================
+  ! 8c. **** OUTPUT THE RESULTS TO SCREEN **** (Or transfer it into a series of arrays out of this thing!)
+  !
+  ! User should read the user guide or the source code of the routine
+  ! CRTM_RTSolution_Inspect in the file CRTM_RTSolution_Define.f90 to
+  ! select the needed variables for outputs.  These variables are contained
+  ! in the structure RTSolution.
+  DO n=1,N_profiles
+    DO l=1,nChan
+        outReflectivity(n, l, 1:n_layers) = &
+        rts(l,n)%Reflectivity(1:n_layers)
+
+        outReflectivityAttenuated(n, l, 1:n_layers) = &
+        rts(l,n)%Reflectivity_Attenuated(1:n_layers)
+    END DO
+  END DO
+  IF( output_emissivity_flag ) THEN
+    DO n=1,N_profiles
+      emissivityReflectivity(1,n,:) = rts(:,n)%Surface_Emissivity 
+      emissivityReflectivity(2,n,:) = rts(:,n)%Surface_Reflectivity
+    END DO
+  END IF 
+
+
+    
+  ! ==========================================================================
+  ! STEP 9. **** CLEAN UP FOR NEXT PROFILE ****
+  !
+  ! 9a. Deallocate the structures
+  ! -----------------------------
+
+
+  ! 9b. Deallocate the arrays
+  ! -------------------------
+  ! ==========================================================================
+  CALL CRTM_Atmosphere_Destroy(atm)
+  CALL crtm_rtsolution_destroy(rts)
+  CALL crtm_options_destroy(options)
+  deallocate(atm,stat=alloc_stat)
+  CALL check_allocate_status(alloc_stat,"Atm failed to deallocate.")
+  deallocate(sfc, stat=alloc_stat)
+  CALL check_allocate_status(alloc_stat,"Sfc failed to deallocate.")
+  DEALLOCATE(rts, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,"Rts failed to deallocate.")
+  DEALLOCATE(geo, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,"Geo failed to deallocate.")
+  DEALLOCATE(options, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,"Options failed to deallocate.")
+
+  ! ==========================================================================
+  ! 10. **** DESTROY THE CRTM ****
+  !
+  WRITE( *, '( /5x, "Destroying the CRTM..." )' )
+  err_stat = CRTM_Destroy( chinfo )
+  CALL check_allocate_status(err_stat, 'Error Destroying the CRTM')
+  write(*,*)'wrap_forward done!'
+
+end SUBROUTINE wrap_forward_active
+
 
 
 END MODULE pycrtm

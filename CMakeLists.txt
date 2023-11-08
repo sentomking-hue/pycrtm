@@ -54,6 +54,7 @@ add_custom_command(
     only: 
     wrap_forward 
     wrap_k_matrix
+    wrap_forward_active
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 #Shouldn't need this, but scikit-build won't grab the shared object otherwise.
