@@ -1,6 +1,4 @@
-import os, sys, tarfile, configparser, ssl, shutil, socket
-from contextlib import closing
-import urllib.request
+import os, sys, configparser, shutil, time
 from skbuild import setup
 def main():
     #Completely remove previous _skbuild, because cache will remember previous interation and ignore you if you change something.
@@ -47,37 +45,37 @@ def linkCoef(coefDir,coefDest):
     cwd = os.getcwd()
 
     if( not os.path.isdir( coefDest )  ):
+        print("Creating directory:{}".format(coefDest))
         os.makedirs( coefDest )
     else:
+        print("Cleaning directory:{}".format(coefDest))
         shutil.rmtree( coefDest )
+        print("Creating directory:{}".format(coefDest))
         os.makedirs( coefDest )
-
+    print("Linking Coefficients in {} to {}".format(coefDir,coefDest))
     topdir = os.listdir(coefDir)
-    # if its more than 1 item, this means we've hit a "fix" directory
-    # otherwise treat it like an extracted coef tarball
-    filecnt = 0
-    if(len(topdir)>1):
-        for t in topdir:
-            if( os.path.isfile( os.path.join(coefDir,t) ) ):
-                os.symlink( os.path.join(coefDir,t), os.path.join(coefDest,t))
-                filecnt+=1
-        if(filecnt ==0):
-            print("Warning!!! number of sym-linked files is zero!!!")
+    # use os.walk to get files regardless if they're in an emc "fix" style directory, or crtm coeff tarball.
+    searchPath = coefDir 
+    toLink = []
+    filesPresent = []
+    for root,dirs,filez in os.walk(searchPath):
+        for name in filez:
+            srcPath = os.path.join(root,name)
+            if(not ('ODAS' in srcPath or 'Big_Endian' in srcPath)):
+                curF = os.path.split(srcPath)[1]
+                if (curF not in filesPresent):
+                    toLink.append(srcPath)
+                    filesPresent.append(curF)
+    coefCnt = 0
+    for l in toLink:
+        os.symlink(l, os.path.join(coefDest,os.path.split(l)[1]))
+        coefCnt+=1
+    if coefCnt == 0:
+        print("Warning! Linked zero coefficients!")
+        time.sleep(30)
     else:
-        searchPath = coefDir 
-        toLink = []
-        filesPresent = []
-        for root,dirs,filez in os.walk(searchPath):
-            for name in filez:
-                srcPath = os.path.join(root,name)
-                if(not ('ODAS' in srcPath or 'Big_Endian' in srcPath)):
-                    curF = os.path.split(srcPath)[1]
-                    if (curF not in filesPresent):
-                        toLink.append(srcPath)
-                        filesPresent.append(curF)
-
-        for l in toLink:
-            os.symlink(l, os.path.join(coefDest,os.path.split(l)[1]))
+        print("Linked {:d} Coefficients.".format(coefCnt)) 
+    time.sleep(10)
 if __name__ == "__main__":
     main()
 
