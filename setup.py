@@ -55,13 +55,16 @@ def linkCoef(coefDir,coefDest):
     topdir = os.listdir(coefDir)
     # if its more than 1 item, this means we've hit a "fix" directory
     # otherwise treat it like an extracted coef tarball
+    filecnt = 0
     if(len(topdir)>1):
         for t in topdir:
             if( os.path.isfile( os.path.join(coefDir,t) ) ):
                 os.symlink( os.path.join(coefDir,t), os.path.join(coefDest,t))
+                filecnt+=1
+        if(filecnt ==0):
+            print("Warning!!! number of sym-linked files is zero!!!")
     else:
-        td = topdir[0]
-        searchPath = os.path.join(coefDir,td)
+        searchPath = coefDir 
         toLink = []
         filesPresent = []
         for root,dirs,filez in os.walk(searchPath):
