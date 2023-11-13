@@ -926,7 +926,7 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
                         climatology, & 
                         surfaceTemperatures, surfaceFractions, LAI, salinity,  windSpeed10m, windDirection10m, & 
                         landType, soilType, vegType, waterType, snowType, iceType, nthreads, &  
-                        outReflectivity, outReflectivityAttenuated )      
+                        outReflectivity, outReflectivityAttenuated, outHeight )      
 
   ! ============================================================================
   ! STEP 1. **** ENVIRONMENT SETUP FOR CRTM USAGE ****
@@ -968,6 +968,7 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   
   REAL(KIND=8), INTENT(OUT) :: outReflectivity(N_Profiles,nChan,N_Layers) 
   REAL(KIND=8), INTENT(OUT) :: outReflectivityAttenuated(N_Profiles,nChan,N_Layers) 
+  REAL(KIND=8), INTENT(OUT) :: outHeight(N_Profiles,N_Layers) 
   CHARACTER(len=256), DIMENSION(1) :: sensor_id
   ! --------------------------
   ! Some non-CRTM-y Parameters
@@ -1146,7 +1147,10 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
 
   CALL crtm_options_create( options, nChan )
   CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create.' )
-  print*, 'crtm forward started.'
+  
+  DO n=1,N_profiles
+      atm(n)%Height = Calculate_Height(Atm(n))
+  END DO
   err_stat = CRTM_Forward( atm        , &  ! Input
                            sfc        , &  ! Input
                            geo        , &  ! Input
@@ -1155,7 +1159,6 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   
 
 
-  print*, "return from foward"
 
   CALL check_allocate_status(err_stat, "Error CALLING CRTM_Forward.")
 
@@ -1167,6 +1170,7 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   ! select the needed variables for outputs.  These variables are contained
   ! in the structure RTSolution.
   DO n=1,N_profiles
+    outHeight(n,:) = atm(n)%Height
     DO l=1,nChan
         outReflectivity(n, l, 1:n_layers) = &
         rts(l,n)%Reflectivity(1:n_layers)

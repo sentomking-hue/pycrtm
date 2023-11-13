@@ -76,10 +76,10 @@ def main(sensor_id):
     crtmOb.runDirect()
     forwardReflectivity = crtmOb.Reflectivity
     forwardReflectivityAttenuated = crtmOb.ReflectivityAttenuated
-    print(forwardReflectivity.shape)
+    Height= crtmOb.Height
     zz3 = forwardReflectivity
     zz4 = forwardReflectivityAttenuated 
-    print(zz3.shape,zz4.shape)   
+   # print(zz3.shape,zz4.shape)   
     for i,c in enumerate(cases):
         f,(ax_cld_jac0,ax_cld_jac1,ax_cld_conc) = plt.subplots( ncols=3,nrows=1,figsize=(24,5) )
         freq = crtmOb.frequencyGHz
@@ -93,16 +93,22 @@ def main(sensor_id):
         #s1 = ax_cld_jac0.scatter(pgrid,nu_grid,c=zz3[i,:,:].T,s=3)
         #s2 = ax_cld_jac1.scatter(pgrid,nu_grid,c=zz4[i,:,:].T,s=3 )
         idx, = np.where(zz3[i,0,:]>-9000)
-        ax_cld_jac0.scatter(zz3[i,0,idx],profiles.P[i,idx])
+        #ax_cld_jac0.scatter(zz3[i,0,idx],profiles.P[i,idx])
+        ax_cld_jac0.scatter(zz3[i,0,idx], Height[i,idx])
         idx, = np.where(zz4[i,0,:]>-9000)
-        ax_cld_jac1.scatter(zz4[i,0,idx],profiles.P[i,idx])
-        ax_cld_conc.scatter(profiles.clouds[i,:,0,0],profiles.P[i,:])
-        ax_cld_conc.invert_yaxis()
-        ax_cld_jac0.invert_yaxis()
-        ax_cld_jac1.invert_yaxis()
-        ax_cld_jac0.set_ylabel('Pressure [hPa]')
+        #ax_cld_jac1.scatter(zz4[i,0,idx],profiles.P[i,idx])
+        ax_cld_jac1.scatter(zz4[i,0,idx],Height[i,idx])
+        ax_cld_conc.scatter(profiles.clouds[i,:,0,0],Height[i,:])
+        #ax_cld_conc.scatter(profiles.clouds[i,:,0,0],profiles.P[i,:])
+        #ax_cld_conc.invert_yaxis()
+        #ax_cld_jac0.invert_yaxis()
+        #ax_cld_jac1.invert_yaxis()
+        #ax_cld_jac0.set_ylabel('Pressure [hPa]')
+        ax_cld_jac0.set_ylabel('Height [km]')
         ax_cld_jac0.set_xlabel('Reflectivity [dBz]')
         ax_cld_jac1.set_xlabel('Reflectivity Attenuated [dBz]')
+        ax_cld_jac0.set_ylim([0, Height.max()])
+        ax_cld_jac1.set_ylim([0, Height.max()])
         #ax_cld_jac0.set_xticks(chans)
         #ax_cld_jac1.set_xticks(chans)
         ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   

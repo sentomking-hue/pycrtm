@@ -173,6 +173,7 @@ class pyCRTM:
         self.IRwaterCoeff_File = 'Nalli.IRwater.EmisCoeff.bin'
         self.AerosolCoeff_File = 'AerosolCoeff.bin'
         self.CloudCoeff_File = 'CloudCoeff.bin'
+        self.Height = []
     def loadInst(self):
         binPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin')
         ncPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc')
@@ -309,9 +310,10 @@ class pyCRTM:
                                            self.profiles.surfaceTypes[:,5], 
                                            self.nThreads )
         elif(self.Active):
-
+            
+            #print(pycrtm.wrap_forward_active.__doc__) 
             self.StoreTrans = False
-            self.Reflectivity, self.ReflectivityAttenuated = pycrtm.wrap_forward_active( self.coefficientPath,
+            self.Reflectivity, self.ReflectivityAttenuated, self.Height = pycrtm.wrap_forward_active( self.coefficientPath,
                                                                                           self.sensor_id,
                                                                                           self.channelSubset,
                                                                                           self.subsetOn,
