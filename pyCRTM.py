@@ -174,6 +174,7 @@ class pyCRTM:
         self.AerosolCoeff_File = 'AerosolCoeff.bin'
         self.CloudCoeff_File = 'CloudCoeff.bin'
         self.Height = []
+        self.output_attenuated = True # logical to flip reflectivity in active sensor mode
     def loadInst(self):
         binPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin')
         ncPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc')
@@ -396,9 +397,10 @@ class pyCRTM:
          
         jac_1_dim = max(aer_dims[0],cld_dims[0])
         jac_2_dim = max(aer_dims[1],cld_dims[1])
-        self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK,\
-        self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
-        self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
+        if (self.Active == False):
+            self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK,\
+            self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
+            self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
                                                                                                                                          self.sensor_id,
                                                                                                                                          self.channelSubset,
                                                                                                                                          self.subsetOn,
@@ -448,6 +450,57 @@ class pyCRTM:
                                                                                                                                          self.profiles.surfaceTypes[:,4], 
                                                                                                                                          self.profiles.surfaceTypes[:,5], 
                                                                                                                                          self.nThreads )
+        elif(self.Active):
+            self.Reflectivity, self.ReflectivityAttenuated, self.TK, traceK,\
+            self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
+            self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix_active(  self.coefficientPath,
+                                                                                                                                         self.sensor_id,
+                                                                                                                                         self.channelSubset,
+                                                                                                                                         self.subsetOn,
+                                                                                                                                         self.AerosolCoeff_File,
+                                                                                                                                         self.CloudCoeff_File, 
+                                                                                                                                         self.IRwaterCoeff_File,
+                                                                                                                                         self.MWwaterCoeff_File,
+                                                                                                                                         self.output_attenuated,
+                                                                                                                                         self.output_cloud_K,
+                                                                                                                                         self.output_aerosol_K,
+                                                                                                                                         self.CloudNcBin,
+                                                                                                                                         self.AerosolNcBin,
+                                                                                                                                         self.profiles.Angles[:,0], 
+                                                                                                                                         self.profiles.Angles[:,4], 
+                                                                                                                                         self.profiles.Angles[:,1], 
+                                                                                                                                         self.profiles.Angles[:,2:4],
+                                                                                                                                         self.profiles.SurfGeom[:,0], 
+                                                                                                                                         self.profiles.SurfGeom[:,1], 
+                                                                                                                                         self.profiles.SurfGeom[:,2], 
+                                                                                                                                         self.profiles.DateTimes[:,0], 
+                                                                                                                                         self.profiles.DateTimes[:,1],
+                                                                                                                                         self.profiles.DateTimes[:,2],
+                                                                                                                                         self.nChan_jacobian,
+                                                                                                                                         jac_1_dim,
+                                                                                                                                         jac_2_dim,
+                                                                                                                                         cld_dims[2],
+                                                                                                                                         aer_dims[2],
+                                                                                                                                         self.profiles.Pi, 
+                                                                                                                                         self.profiles.P, 
+                                                                                                                                         self.profiles.T, 
+                                                                                                                                         self.traceConc, 
+                                                                                                                                         self.traceIds,
+                                                                                                                                         self.profiles.climatology,
+                                                                                                                                         self.profiles.surfaceTemperatures, 
+                                                                                                                                         self.profiles.surfaceFractions, 
+                                                                                                                                         self.profiles.LAI, 
+                                                                                                                                         self.profiles.Salinity, 
+                                                                                                                                         self.profiles.windSpeed10m, 
+                                                                                                                                         self.profiles.windDirection10m,
+                                                                                                                                         self.profiles.surfaceTypes[:,0], 
+                                                                                                                                         self.profiles.surfaceTypes[:,1], 
+                                                                                                                                         self.profiles.surfaceTypes[:,2], 
+                                                                                                                                         self.profiles.surfaceTypes[:,3], 
+                                                                                                                                         self.profiles.surfaceTypes[:,4], 
+                                                                                                                                         self.profiles.surfaceTypes[:,5], 
+                                                                                                                                         self.nThreads )
+ 
         for i,ids in enumerate(list(self.traceIds)):
             # I think I can do something smarter here in python to contruct self.QK etc through an execute, or something along those lines?
             if(ids == gases['Q']):   self.QK   = traceK[:,:,:,i]

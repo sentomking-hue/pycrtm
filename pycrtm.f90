@@ -1030,7 +1030,6 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   ! 4a. Initialise all the sensors at once
   ! --------------------------------------
   ! allocate globals in the MODULE based upon user selection through interface.
-  CALL check_and_allocate_globals(.False., N_Profiles, nChan, N_layers)
   ! Figure out what needs allocating for Clouds and Aerosols. Are they on?
   CALL aerosols_and_clouds_on(N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
   
@@ -1221,7 +1220,402 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   write(*,*)'wrap_forward done!'
 
 end SUBROUTINE wrap_forward_active
+SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
+                        AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
+                        output_attenuated, output_cloud_jacobian, output_aerosol_jacobian,&
+                        cld_nc, aer_nc, & 
+                        zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
+                        surf_lat, surf_lon, surf_height, &
+                        year, month, day, & 
+                        nChan, N_profiles, N_LAYERS, N_trace, &
+                        nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian, & 
+                        naerosols_jacobian, & 
+                        pressureLevels, pressureLayers, temperatureLayers, & 
+                        traceConcLayers, trace_IDs, & 
+                        climatology, & 
+                        surfaceTemperatures, surfaceFractions, LAI, salinity, windSpeed10m, windDirection10m, & 
+                        landType, soilType, vegType, waterType, snowType, iceType, &  
+                        nthreads, outReflectivity, outReflectivityAttenuated, & 
+                        temperatureJacobian, traceJacobian, & 
+                        cloudEffectiveRadiusJacobian, cloudConcentrationJacobian, cloudFractionJacobian, &
+                        aerosolEffectiveRadiusJacobian, aerosolConcentrationJacobian)
+  ! ============================================================================
+  ! STEP 1. **** ENVIRONMENT SETUP FOR CRTM USAGE ****
+  !
+  ! MODULE usage
+  USE CRTM_MODULE
+  ! Disable all implicit typing
+  IMPLICIT NONE
+  ! ============================================================================
+  
 
 
+  ! --------------------------
+  ! Some non-CRTM-y Parameters
+  ! --------------------------
+  CHARACTER(*), PARAMETER :: SUBROUTINE_NAME   = 'wrap_k_matrix_active'
+  CHARACTER(*), PARAMETER :: PROGRAM_VERSION_ID = '0.01'
+
+  ! variables for interface
+  CHARACTER(len=*), INTENT(IN) :: coefficientPath
+  CHARACTER(len=*), INTENT(IN) :: sensor_id_in
+  INTEGER, INTENT(IN) :: channel_subset(nChan)
+  CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: CloudCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: IRwaterCoeff_File
+  CHARACTER(len=*), INTENT(IN) :: MWwaterCoeff_File
+  LOGICAL, INTENT(IN) :: subset_on, output_attenuated 
+  LOGICAL, INTENT(IN) :: output_cloud_jacobian, output_aerosol_jacobian
+  CHARACTER(len=*), INTENT(IN) :: cld_nc
+  CHARACTER(len=*), INTENT(IN) :: aer_nc
+  INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
+  INTEGER, INTENT(IN) :: nchan_jacobian, nprof_jacobian, nlayers_jacobian, nclouds_jacobian,naerosols_jacobian 
+  ! The scan angle is based
+  ! on the default Re (earth radius) and h (satellite height)
+  REAL(KIND=8), INTENT(IN) :: zenithAngle(N_profiles), scanAngle(N_profiles)
+  REAL(KIND=8), INTENT(IN) :: azimuthAngle(N_profiles), solarAngle(N_profiles,2)
+  REAL(KIND=8), INTENT(IN) :: surf_lat(n_profiles), surf_lon(n_profiles), surf_height(n_profiles)
+  INTEGER,      INTENT(IN) :: year(n_profiles), month(n_profiles), day(n_profiles)
+  REAL(KIND=8), INTENT(IN) :: pressureLevels(N_profiles, N_Layers+1)
+  REAL(KIND=8), INTENT(IN) :: pressureLayers(N_profiles, N_layers), temperatureLayers(N_profiles, N_layers)
+  REAL(KIND=8), INTENT(IN) :: traceConcLayers(N_profiles, N_layers, N_trace)
+  INTEGER,      INTENT(IN) :: trace_IDs(N_trace)
+  INTEGER,      INTENT(IN) ::  climatology(N_profiles)
+  REAL(KIND=8), INTENT(IN) :: surfaceTemperatures(N_profiles,4), surfaceFractions(N_profiles,4), LAI(N_profiles) 
+  REAL(KIND=8), INTENT(IN) :: salinity(N_profiles), windSpeed10m(N_profiles), windDirection10m(N_profiles)
+  INTEGER,      INTENT(IN) :: landType(N_profiles), soilType(N_profiles), vegType(N_profiles), waterType(N_profiles) 
+  INTEGER,      INTENT(IN) :: snowType(N_profiles), iceType(N_profiles)
+    
+  REAL(KIND=8), INTENT(OUT) :: outReflectivity(N_profiles,nChan,N_layers), outReflectivityAttenuated(N_profiles,nChan,N_layers) 
+  REAL(KIND=8), INTENT(OUT) :: temperatureJacobian(N_profiles, nChan, N_LAYERS)
+  REAL(KIND=8), INTENT(OUT) :: traceJacobian(N_profiles, nChan, N_LAYERS, N_trace)
+  REAL(KIND=8), INTENT(OUT)  :: cloudEffectiveRadiusJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian) !(nChan,N_Profiles,N_layers, N_clouds)
+  REAL(KIND=8), INTENT(OUT)  :: cloudConcentrationJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,nclouds_jacobian)   !(nChan,N_profiles,N_layers, N_clouds)
+  REAL(KIND=8), INTENT(OUT)  :: cloudFractionJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian)          !(nChan,N_profiles,N_layers)
+  REAL(KIND=8), INTENT(OUT) :: aerosolEffectiveRadiusJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,naerosols_jacobian) !(nChan,N_Profiles,N_layers, N_aerosols)
+  REAL(KIND=8), INTENT(OUT) :: aerosolConcentrationJacobian(nchan_jacobian,nprof_jacobian,nlayers_jacobian,naerosols_jacobian)   !(nChan,N_profiles,N_layers, N_aerosols)
+  INTEGER,      INTENT(IN) :: nthreads
+  CHARACTER(len=256) :: sensor_id(1)
+  ! ============================================================================
+  ! STEP 2. **** SET UP SOME PARAMETERS FOR THE CRTM RUN ****
+  !
+  
+  ! Sensor information
+  INTEGER, PARAMETER :: N_SENSORS = 1
+  ! ============================================================================
+  
+
+
+  ! ---------
+  ! Variables
+  ! ---------
+  CHARACTER(256) :: version
+  INTEGER :: err_stat, alloc_stat
+  INTEGER :: n_channels, N_aerosols_crtm, N_clouds_crtm
+  INTEGER :: l, n,k, i_abs,ncld, na
+  LOGICAL :: cloudsOn, aerosolsOn
+
+
+  ! ============================================================================
+  ! STEP 3. **** DEFINE THE CRTM INTERFACE STRUCTURES ****
+  !
+  ! 3a. Define the "non-demoninational" arguments
+  ! ---------------------------------------------
+  TYPE(CRTM_ChannelInfo_type)             :: chinfo(1)
+  ! 3b. Define the FORWARD variables
+  ! --------------------------------
+  TYPE(CRTM_Atmosphere_type), ALLOCATABLE :: atm(:)
+  TYPE(CRTM_Surface_type),    ALLOCATABLE :: sfc(:)
+  TYPE(CRTM_Geometry_type),   ALLOCATABLE :: geo(:)
+  TYPE(crtm_options_type),    ALLOCATABLE :: options(:)
+  TYPE(CRTM_RTSolution_type), ALLOCATABLE :: rts(:,:)
+ 
+  ! 3c. Define the K-MATRIX variables
+  ! ---------------------------------
+  TYPE(CRTM_Atmosphere_type), ALLOCATABLE :: atm_K(:,:)
+  TYPE(CRTM_Surface_type)   , ALLOCATABLE :: sfc_K(:,:)
+  TYPE(CRTM_RTSolution_type), ALLOCATABLE :: rts_K(:,:)
+  ! ============================================================================
+
+
+  sensor_id(1) = sensor_id_in
+  ! Program header
+  ! --------------
+  CALL CRTM_Version( Version )
+  CALL Program_Message( SUBROUTINE_NAME, &
+    'Running simulation.', &
+    'CRTM Version: '//TRIM(Version) )
+
+
+  ! ============================================================================
+  ! STEP 4. **** INITIALIZE THE CRTM ****
+  !
+  ! 4a. Initialise all the sensors at once
+  ! --------------------------------------
+  ! figure out how to allocate aerosols/clouds and are the even turned on by the user?
+  CALL aerosols_and_clouds_on( N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
+  WRITE( *,'(/5x,"Initializing the CRTM...")' )
+
+  err_stat = CRTM_Init( sensor_id,  chinfo, &
+                        File_Path=coefficientPath, &
+                        NC_File_Path=coefficientPath,& 
+                        Load_CloudCoeff = cloudsOn, &  
+                        Load_AerosolCoeff = aerosolsOn, &
+                        CloudCoeff_Format = cld_nc,&
+                        AerosolCoeff_Format = aer_nc,&
+                        CloudCoeff_File = CloudCoeff_File, &  
+                        AerosolCoeff_File = AerosolCoeff_File, &
+                        IRwaterCoeff_File = IRwaterCoeff_File, & 
+                        MWwaterCoeff_File = MWwaterCoeff_File, & 
+                        Quiet=.True. )
+ 
+  CALL check_allocate_status(err_stat, 'Error initializing CRTM')
+  IF(subset_on) then
+      err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
+                                     Channel_Subset = channel_subset)
+      IF(err_stat /= 0 ) write(*,*)'error specifying channel subset'
+  END IF
+
+
+  ! 4b. Output some channel information
+  ! -----------------------------------
+  n_channels = CRTM_ChannelInfo_n_Channels(chinfo(1))
+  WRITE( *,'(/5x,"Processing a total of ",i0," channels...")' ) n_channels
+  WRITE( *,'(7x,i0," from ",a)' )  CRTM_ChannelInfo_n_Channels(chinfo(1)), TRIM(sensor_id(1))
+ 
+  
+  ! ==========================================================================
+  ! STEP 5. **** ALLOCATE STRUCTURE ARRAYS ****
+  !
+  ! 5a. Determine the number of channels
+  !     for the current sensor
+  ! ------------------------------------
+  n_channels = CRTM_ChannelInfo_n_Channels(chinfo(1))
+
+  
+  ! 5b. Allocate the ARRAYS
+  ! -----------------------
+  allocate(atm(N_profiles), STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,'Error allocating atm')
+
+  allocate(sfc(N_profiles), STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,'Error allocating sfc')
+
+  allocate(geo(N_profiles), STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,'Error allocating Geometry')
+
+  allocate(options(N_profiles), STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat,'Error allocating Options')
+
+  ALLOCATE( rts( n_channels, N_profiles), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat,'Error allocating rts')
+
+  ALLOCATE( atm_K( n_channels, N_profiles ), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat,'Error allocating atm_k')
+
+  ALLOCATE( sfc_K( n_channels, N_profiles ), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat,'Error allocating sfc_k')
+
+  ALLOCATE( rts_K( n_channels, N_profiles ), STAT = alloc_stat )
+  CALL check_allocate_status(alloc_stat,'Error allocating rts_k')
+  ! 5c. Allocate the STRUCTURE INTERNALS
+  ! ----------------------------------------
+  ! The input FORWARD structure
+  CALL CRTM_Atmosphere_Create( atm, N_LAYERS, N_trace, N_CLOUDS_crtm, N_AEROSOLS_crtm )
+  CALL check_LOGICAL_status(ANY(.NOT. CRTM_Atmosphere_Associated(atm)), 'Error in CRTM_Atmosphere_Create Atm()')
+
+  ! The output K-MATRIX structure
+  CALL CRTM_Atmosphere_Create( atm_K, N_LAYERS, N_trace, N_CLOUDS_crtm, N_AEROSOLS_crtm )
+  CALL check_LOGICAL_status(ANY(.NOT. CRTM_Atmosphere_Associated(atm_K)),  'Error in CRTM_Atmosphere_Create Atm_k()')
+
+  CALL crtm_rtsolution_create( rts, n_layers )
+  CALL check_LOGICAL_status(any(.not. crtm_rtsolution_associated( rts )),  'Error in crtm_rtsolution_create rts()')
+    
+  CALL crtm_rtsolution_create( rts_k, n_layers )
+  CALL check_LOGICAL_status(any(.not. crtm_rtsolution_associated( rts_k )),  'Error in crtm_rtsolution_create rts_k()')
+
+  !$ CALL omp_set_num_threads(nthreads)  
+  ! ==========================================================================
+  ! STEP 6. **** ASSIGN INPUT DATA ****
+  !
+  ! 6a. Atmosphere and Surface input
+  !     NOTE: that this is the hard part (in my opinion :o). The mechanism by
+  !     by which the atmosphere and surface data are loaded in to their
+  !     respective structures below was done purely to keep the step-by-step
+  !     instructions in this program relatively "clean".
+  ! ------------------------------------------------------------------------
+  ! ...Profile data
+  DO n=1,N_profiles
+    CALL set_profile(atm, n, climatology(n), pressureLevels(n,:), pressureLayers(n,:), temperatureLayers(n,:),&
+                       traceConcLayers(n,:,:), trace_IDs(:), &
+                       N_trace, N_aerosols_crtm, N_clouds_crtm, aerosolsOn, cloudsOn)
+ 
+    ! 4a.1 Profile #1
+    ! ---------------
+    ! ...Land surface CHARACTERistics
+    CALL set_surface(sfc, n,  surfaceFractions(n,:), landType(n), surfaceTemperatures(n,:), LAI(n), & 
+                         soilType(n), vegType(n), waterType(n), snowType(n), iceType(n), &
+                         windSpeed10m(n), windDirection10m(n), salinity(n))
+ 
+    ! 6b. Geometry input
+    ! ------------------
+    ! All profiles are given the same value
+    CALL CRTM_Geometry_SetValue( geo(n), &
+                               year = year(n), & 
+                               month = month(n), & 
+                               day = day(n), & 
+                               Sensor_Zenith_Angle  = zenithAngle(n),   &
+                               Sensor_Scan_Angle    = scanAngle(n),     & 
+                               Sensor_Azimuth_Angle = azimuthAngle(n),  &
+                               Longitude = surf_lon(n),  &  
+                               Latitude = surf_lat(n),  &  
+                               Surface_Altitude = surf_height(n),  &  
+                               Source_Zenith_Angle  = solarAngle(n,1),  & 
+                               Source_Azimuth_Angle = solarAngle(n,2) )
+
+  END DO
+  atm%Add_Extra_Layers = .False.
+  ! ==========================================================================
+
+  ! ==========================================================================
+  ! STEP 7. **** INITIALIZE THE K-MATRIX ARGUMENTS ****
+  !
+  ! 7a. Zero the K-matrix OUTPUT structures
+  ! ---------------------------------------
+  
+  CALL CRTM_Atmosphere_Zero( atm_K )
+  CALL CRTM_Surface_Zero( sfc_K )
+  atm_K%Add_Extra_Layers = .False.
+  ! 7b. Inintialize the K-matrix INPUT so
+  !     that the results are dTb/dx
+  ! -------------------------------------
+  rts_K%Radiance               = ZERO
+  rts_K%Brightness_Temperature = ZERO
+  ! Set whether you want jacobians of Refl. or Attenuated Refl.
+  DO l=1,n_channels
+      DO n=1,n_profiles
+          DO k=1, N_LAYERS
+              rts_K(l,n)%Reflectivity_Attenuated(k) = ZERO
+              rts_K(l,n)%Reflectivity(k) = ZERO
+              IF (output_attenuated) then
+                  rts_K(l,n)%Reflectivity_Attenuated(k) = ONE
+              ELSE
+                  rts_K(l,n)%Reflectivity(k) = ONE
+              END IF
+          END DO
+      END DO
+  END DO
+
+
+  ! ==========================================================================
+  
+ ! ==========================================================================
+  ! STEP 8. **** CALL THE CRTM FUNCTIONS FOR THE CURRENT SENSOR ****
+  !
+  ! 8b. The K-matrix model
+  ! ----------------------
+  CALL crtm_options_create( options, nChan )
+  CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create' )
+
+
+
+!  err_stat = CRTM_K_Matrix( atm        , &  ! FORWARD  Input
+!                            sfc        , &  ! FORWARD  Input
+!                            rts_K      , &  ! K-MATRIX Input
+!                            geo        , &  ! Input
+!                            chinfo     , &  ! Input
+!                            atm_K      , &  ! K-MATRIX Output
+!                            sfc_K      , &  ! K-MATRIX Output
+!                            rts        , &  ! FORWARD  Output
+!                            Options=options)
+  err_stat = CRTM_K_Matrix( atm        , &  ! FORWARD  Input
+                            sfc        , &  ! FORWARD  Input
+                            rts_K      , &  ! K-MATRIX Input
+                            geo        , &  ! Input
+                            chinfo     , &  ! Input
+                            atm_K      , &  ! K-MATRIX Output
+                            sfc_K      , &  ! K-MATRIX Output
+                            rts        , &  ! FORWARD  Output
+                            Options=options)
+
+
+
+
+  CALL check_allocate_status(err_stat,'Error CALLing the CRTM K-Matrix Active Model')    
+
+  ! ==========================================================================
+  ! STEP 9. **** CLEAN UP FOR NEXT SENSOR ****
+  !
+  ! 9a. Deallocate the structures
+  ! -----------------------------
+  
+
+  ! 9b. Deallocate the arrays
+  ! -------------------------
+  ! transfer jacobians out
+  DO n=1,N_profiles
+    DO l=1,nChan        
+        outReflectivity(n, l, 1:n_layers) = &
+        rts(l,n)%Reflectivity(1:n_layers)
+
+        outReflectivityAttenuated(n, l, 1:n_layers) = &
+        rts(l,n)%Reflectivity_Attenuated(1:n_layers)
+
+      temperatureJacobian(n, l, 1:n_layers) = atm_k(l, n)%Temperature(1:n_layers)
+      !jacobians of H2O, O3, etc... will be determined by the order in which they were assigned in atm. 
+      DO i_abs=1,N_trace
+          traceJacobian(n,l, 1:n_layers,i_abs) = atm_k(l,n)%Absorber(1:n_layers,i_abs)
+      END DO
+      IF (output_cloud_jacobian) then
+          DO ncld=1,N_clouds_crtm
+              cloudEffectiveRadiusJacobian(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Effective_Radius(1:n_layers) 
+              cloudConcentrationJacobian(l,n,1:n_layers,ncld) = atm_k(l,n)%cloud(ncld)%Water_Content(1:n_layers)
+          END DO 
+          cloudFractionJacobian(l,n,1:n_layers)        = atm_k(l,n)%Cloud_Fraction(1:n_layers)
+      ENDIF
+      IF (output_aerosol_jacobian) then
+           DO na=1,N_aerosols_crtm
+               aerosolEffectiveRadiusJacobian(l,n,1:n_layers,na) = atm_k(l,n)%aerosol(na)%Effective_Radius(1:n_layers)
+               aerosolConcentrationJacobian(l,n,1:n_layers,na) = atm_k(l,n)%aerosol(na)%Concentration(1:n_layers)
+           END DO 
+      ENDIF 
+    END DO
+  END DO
+
+
+  CALL CRTM_Atmosphere_Destroy(atm)
+  CALL CRTM_Atmosphere_Destroy(atm_k)
+  CALL crtm_options_destroy(options)
+  DEALLOCATE(atm_k, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'Atm_k deallocate failed')
+
+  DEALLOCATE(rts_K, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'rts_k deallocate failed')
+
+  DEALLOCATE(sfc_k, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'sfc_k deallocate failed')
+
+  DEALLOCATE(rts, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'rts deallocate failed')
+
+  DEALLOCATE(atm, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'atm deallocate failed')
+
+  DEALLOCATE(sfc, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'sfc deallocate failed')
+
+  DEALLOCATE(options, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'options deallocate failed')
+
+  DEALLOCATE(geo, STAT = alloc_stat)
+  CALL check_allocate_status(alloc_stat, 'geo deallocate failed')
+  ! ==========================================================================
+  ! 10. **** DESTROY THE CRTM ****
+  !
+  WRITE( *, '( /5x, "Destroying the CRTM..." )' )
+  err_stat = CRTM_Destroy( chinfo )
+  CALL check_allocate_status(err_stat, 'Error destroying the CRTM.')
+  ! ==========================================================================
+END SUBROUTINE wrap_k_matrix_active
 
 END MODULE pycrtm
