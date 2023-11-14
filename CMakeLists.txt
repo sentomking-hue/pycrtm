@@ -25,8 +25,10 @@ endif()
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel")
     set(ompFlag "-liomp5")
+    set(switch_fun "intelem")
 else()
     set(ompFlag "-lgomp")
+    set(switch_fun "gfortran")
 endif()
 
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.F90")
@@ -44,6 +46,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
       --overwrite-signature
     COMMAND ${F2PY_EXECUTABLE}
+      --fcompiler=${switch_fun}
       -m ${f2py_module_name}
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
@@ -71,6 +74,7 @@ else()
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
       --overwrite-signature
     COMMAND ${F2PY_EXECUTABLE}
+      --fcompiler=${switch_fun}
       -m ${f2py_module_name}
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
