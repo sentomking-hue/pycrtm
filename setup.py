@@ -7,6 +7,8 @@ def main():
     
     #path of this file.
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
+    #add .F90 symlink to keep history of pycrtm.f90 
+    os.symlink(os.path.join(scriptDir,'pycrtm.f90'),os.path.join(scriptDir,'pycrtm.F90'))
     #read configuration
     coef_path, coef_dest, crtm_install, link_coef = readSetup('setup.cfg',scriptDir)
     if(link_coef):
@@ -31,6 +33,7 @@ def main():
         package_data={'pyCRTM':['pyCRTM/setup.txt']})
     
     os.remove('MANIFEST.in')
+    os.remove('pycrtm.F90')
 def readSetup(setup_file, scriptDir):
     cfg = configparser.ConfigParser()
     cfg.read( os.path.join(scriptDir,'setup.cfg') )

@@ -1,4 +1,4 @@
-import os, glob, struct, configparser,netCDF4
+import os, sys, glob, struct, configparser,netCDF4
 import numpy as np 
 def findLib(thisDir):
     """
@@ -36,11 +36,11 @@ def setLD_LIBRARY_PATH(libdir):
     #Set the LD_LIBRARY_PATH to make it possible to used shared object. 
     old_ld = os.environ.get("LD_LIBRARY_PATH")
     if old_ld:
-        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
+        if(libdir not in os.environ["LD_LIBRARY_PATH"]):
             os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
             os.execv(sys.argv[0], sys.argv)
     else:
-        if(setupdir not in os.environ["LD_LIBRARY_PATH"]):
+        if(libdir not in os.environ["LD_LIBRARY_PATH"]):
             os.environ["LD_LIBRARY_PATH"] = libdir
             os.execv(sys.argv[0], sys.argv)
 

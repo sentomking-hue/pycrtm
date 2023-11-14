@@ -913,6 +913,7 @@ END SUBROUTINE wrap_k_matrix
         xout(j) = xout(j-1) + x(j)
     END DO
   END FUNCTION cumsum
+#ifdef PYCRTM_ACTIVE
 SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         cld_nc, aer_nc, &
@@ -1617,5 +1618,5 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
   CALL check_allocate_status(err_stat, 'Error destroying the CRTM.')
   ! ==========================================================================
 END SUBROUTINE wrap_k_matrix_active
-
+#endif
 END MODULE pycrtm

@@ -11,7 +11,12 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${_Python3_NumPy_INCLUDE_DIR})
 include_directories(NetCDF_F90_INCLUDE_DIRS)
 get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
-set(crtm_INCLUDE $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
+if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
+    set(crtm_INCLUDE $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
+else()
+    set(crtm_INCLUDE $ENV{CRTM_INSTALL}/include/)
+endif()
+
 if (EXISTS $ENV{CRTM_INSTALL}/lib64/)
     set(crtm_LIB $ENV{CRTM_INSTALL}/lib64/)
 else()
@@ -24,39 +29,65 @@ else()
     set(ompFlag "-lgomp")
 endif()
 
-set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.f90")
+set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.F90")
 set(f2py_module_name "pycrtm")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
-
 #_dumb is used to avoid circular dependency which breaks Ninja.
 add_custom_target(${f2py_module_name}_dumb ALL
   DEPENDS ${generated_module_file}
   )
-
-add_custom_command(
-  OUTPUT ${generated_module_file}
-  COMMAND ${F2PY_EXECUTABLE}
-    -m ${f2py_module_name}
-    -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
-    --overwrite-signature
-  COMMAND ${F2PY_EXECUTABLE}
-    -m ${f2py_module_name}
-    -c
-    ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
-    ${fortran_src_file}
-    -I${crtm_INCLUDE}
-    -I${NETCDF_FORTRAN_INCLUDE_DIRS}
-    -L${CDF_LIB_PATH}
-    -L${crtm_LIB}
-    -lcrtm
-    -lnetcdff
-    ${ompFlag}
-    only: 
-    wrap_forward 
-    wrap_k_matrix
-    wrap_forward_active
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
+if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/crtm_active_sensor.mod)
+  add_custom_command(
+    OUTPUT ${generated_module_file}
+    COMMAND ${F2PY_EXECUTABLE}
+      -m ${f2py_module_name}
+      -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
+      --overwrite-signature
+    COMMAND ${F2PY_EXECUTABLE}
+      -m ${f2py_module_name}
+      -c
+      ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
+      ${fortran_src_file}
+      -I${crtm_INCLUDE}
+      -I${NETCDF_FORTRAN_INCLUDE_DIRS}
+      -L${CDF_LIB_PATH}
+      -L${crtm_LIB}
+      -lcrtm
+      -lnetcdff
+      ${ompFlag}
+      -DPYCRTM_ACTIVE
+      only: 
+      wrap_forward 
+      wrap_k_matrix
+      wrap_forward_active
+      wrap_k_matrix_active
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+else()
+  add_custom_command(
+    OUTPUT ${generated_module_file}
+    COMMAND ${F2PY_EXECUTABLE}
+      -m ${f2py_module_name}
+      -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
+      --overwrite-signature
+    COMMAND ${F2PY_EXECUTABLE}
+      -m ${f2py_module_name}
+      -c
+      ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
+      ${fortran_src_file}
+      -I${crtm_INCLUDE}
+      -I${NETCDF_FORTRAN_INCLUDE_DIRS}
+      -L${CDF_LIB_PATH}
+      -L${crtm_LIB}
+      -lcrtm
+      -lnetcdff
+      ${ompFlag}
+      only: 
+      wrap_forward 
+      wrap_k_matrix
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+endif()
 #Shouldn't need this, but scikit-build won't grab the shared object otherwise.
 list(GET _Python3_INTERPRETER_PROPERTIES 6 version)
 set(produced_so ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.${version}.so)
