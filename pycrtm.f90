@@ -1236,7 +1236,7 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
                         climatology, & 
                         surfaceTemperatures, surfaceFractions, LAI, salinity, windSpeed10m, windDirection10m, & 
                         landType, soilType, vegType, waterType, snowType, iceType, &  
-                        nthreads, outReflectivity, outReflectivityAttenuated, & 
+                        nthreads, outHeight, outReflectivity, outReflectivityAttenuated, & 
                         temperatureJacobian, traceJacobian, & 
                         cloudEffectiveRadiusJacobian, cloudConcentrationJacobian, cloudFractionJacobian, &
                         aerosolEffectiveRadiusJacobian, aerosolConcentrationJacobian)
@@ -1287,6 +1287,7 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
   INTEGER,      INTENT(IN) :: landType(N_profiles), soilType(N_profiles), vegType(N_profiles), waterType(N_profiles) 
   INTEGER,      INTENT(IN) :: snowType(N_profiles), iceType(N_profiles)
     
+  REAL(KIND=8), INTENT(OUT) :: outHeight(N_profiles, N_LAYERS)
   REAL(KIND=8), INTENT(OUT) :: outReflectivity(N_profiles,nChan,N_layers), outReflectivityAttenuated(N_profiles,nChan,N_layers) 
   REAL(KIND=8), INTENT(OUT) :: temperatureJacobian(N_profiles, nChan, N_LAYERS)
   REAL(KIND=8), INTENT(OUT) :: traceJacobian(N_profiles, nChan, N_LAYERS, N_trace)
@@ -1507,6 +1508,9 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
       END DO
   END DO
 
+  DO n=1,N_profiles
+      atm(n)%Height = Calculate_Height(Atm(n))
+  END DO
 
   ! ==========================================================================
   
@@ -1555,6 +1559,7 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
   ! -------------------------
   ! transfer jacobians out
   DO n=1,N_profiles
+    outHeight(n,:) = atm(n)%Height
     DO l=1,nChan        
         outReflectivity(n, l, 1:n_layers) = &
         rts(l,n)%Reflectivity(1:n_layers)

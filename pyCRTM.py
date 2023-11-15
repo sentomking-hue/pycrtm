@@ -451,7 +451,7 @@ class pyCRTM:
                                                                                                                                          self.profiles.surfaceTypes[:,5], 
                                                                                                                                          self.nThreads )
         elif(self.Active):
-            self.Reflectivity, self.ReflectivityAttenuated, self.TK, traceK,\
+            self.Height, self.Reflectivity, self.ReflectivityAttenuated, self.TK, traceK,\
             self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
             self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix_active(  self.coefficientPath,
                                                                                                                                          self.sensor_id,

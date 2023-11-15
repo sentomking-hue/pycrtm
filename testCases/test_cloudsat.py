@@ -35,8 +35,8 @@ def main(sensor_id,plotMe):
         profiles.clouds[i,:,0,0] = cld #np.asarray(h5['cloudConcentration'])
         zzz = np.zeros(np.asarray(h5['cloudConcentration']).shape)
         cld = zzz
-        cld[idx]=1000 
-        profiles.clouds[i,:,0,1] =cld #np.asarray(h5['cloudEffectiveRadius'])
+        cld[idx] = 1000 
+        profiles.clouds[i,:,0,1] = cld #np.asarray(h5['cloudEffectiveRadius'])
         profiles.aerosols[i,:,0,0] = np.asarray(h5['aerosolConcentration'])
         profiles.aerosols[i,:,0,1] = np.asarray(h5['aerosolEffectiveRadius'])
         profiles.aerosolType[i] = h5['aerosolType'][()]
@@ -72,7 +72,7 @@ def main(sensor_id,plotMe):
     crtmOb.Active = True
     crtmOb.CloudCoeff_File = 'CloudCoeff_DDA_Moradi_2022.nc4'
     crtmOb.loadInst()
-
+    
     crtmOb.runDirect()
     forwardReflectivity = crtmOb.Reflectivity
     forwardReflectivityAttenuated = crtmOb.ReflectivityAttenuated
