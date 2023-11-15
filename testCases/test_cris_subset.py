@@ -11,6 +11,7 @@ def main(sensor_id):
     # create 4 profiles for each of the 4 cases
     profiles = profilesCreate( 4, 92 )
     storedTb = []
+    storedTbv3 = []
     storedEmis = []
     sub = np.asarray([5,10,15],dtype=int)
     pyIdx = sub - 1
@@ -53,6 +54,7 @@ def main(sensor_id):
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
         storedTb.append(np.asarray(h5['Tb_cris'])[pyIdx])
+        storedTbv3.append(np.asarray(h5['Tb_cris_v3'])[pyIdx])
         storedEmis.append(np.asarray(h5['emissivity_cris'])[pyIdx])
         h5.close()
     crtmOb = pyCRTM()
@@ -74,6 +76,8 @@ def main(sensor_id):
 
     if ( all( np.abs( forwardTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5) ):
         print("Yay! all values are close enough to what CRTM test program produced!")
+    elif ( all( np.abs( forwardTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5) ):
+        print("Yay! all values are close enough to what CRTMv3 test program produced!")
     else: 
         print("Boo! something failed.")
 

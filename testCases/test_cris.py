@@ -11,6 +11,7 @@ def main(sensor_id):
     # create 4 profiles for each of the 4 cases
     profiles = profilesCreate( 4, 92 )
     storedTb = []
+    storedTbv3 = []
     storedEmis = []
     # populate the cases, and previously calculated Tb from crtm test program.    
     for i,c in enumerate(cases):
@@ -50,6 +51,7 @@ def main(sensor_id):
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
         storedTb.append(np.asarray(h5['Tb_cris']))
+        storedTbv3.append(np.asarray(h5['Tb_cris_v3']))
         storedEmis.append(np.asarray(h5['emissivity_cris']))
         h5.close()
 
@@ -71,6 +73,8 @@ def main(sensor_id):
 
     if ( all( np.abs( forwardTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5) ):
         print("Yay! all values are close enough to what CRTM test program produced!")
+    elif ( all( np.abs( forwardTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5) ):
+        print("Yay! all values are close enough to what CRTMv3 test program produced!")
     else: 
         print("Boo! something failed. Look at cris plots")
         wavenumbers = np.zeros([4,1305])
