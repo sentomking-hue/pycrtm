@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import os, h5py, sys 
+import os, h5py, sys, argparse 
 import numpy as np
 from matplotlib import pyplot as plt
 from pyCRTM import pyCRTM, profilesCreate
  
-def main(sensor_id):
+def main(sensor_id,plotMe):
     thisDir = os.path.dirname(os.path.abspath(__file__))
     cases = os.listdir( os.path.join(thisDir,'data') )
     cases.sort()
@@ -79,45 +79,50 @@ def main(sensor_id):
     Height= crtmOb.Height
     zz3 = forwardReflectivity
     zz4 = forwardReflectivityAttenuated 
-   # print(zz3.shape,zz4.shape)   
-    for i,c in enumerate(cases):
-        f,(ax_cld_jac0,ax_cld_jac1,ax_cld_conc) = plt.subplots( ncols=3,nrows=1,figsize=(24,5) )
-        freq = crtmOb.frequencyGHz
-        chans = []
-        for ii,ff in enumerate(freq):
-            iii=ii+1
-            chans.append(iii)
-        chans = np.asarray(chans)     
-        pgrid,nu_grid = np.meshgrid(chans,profiles.P[i,:])
-        print('whir',pgrid.shape,nu_grid.shape)
-        #s1 = ax_cld_jac0.scatter(pgrid,nu_grid,c=zz3[i,:,:].T,s=3)
-        #s2 = ax_cld_jac1.scatter(pgrid,nu_grid,c=zz4[i,:,:].T,s=3 )
-        idx, = np.where(zz3[i,0,:]>-9000)
-        #ax_cld_jac0.scatter(zz3[i,0,idx],profiles.P[i,idx])
-        ax_cld_jac0.scatter(zz3[i,0,idx], Height[i,idx])
-        idx, = np.where(zz4[i,0,:]>-9000)
-        #ax_cld_jac1.scatter(zz4[i,0,idx],profiles.P[i,idx])
-        ax_cld_jac1.scatter(zz4[i,0,idx],Height[i,idx])
-        ax_cld_conc.scatter(profiles.clouds[i,:,0,0],Height[i,:])
-        #ax_cld_conc.scatter(profiles.clouds[i,:,0,0],profiles.P[i,:])
-        #ax_cld_conc.invert_yaxis()
-        #ax_cld_jac0.invert_yaxis()
-        #ax_cld_jac1.invert_yaxis()
-        #ax_cld_jac0.set_ylabel('Pressure [hPa]')
-        ax_cld_jac0.set_ylabel('Height [km]')
-        ax_cld_jac0.set_xlabel('Reflectivity [dBz]')
-        ax_cld_jac1.set_xlabel('Reflectivity Attenuated [dBz]')
-        ax_cld_jac0.set_ylim([0, Height.max()])
-        ax_cld_jac1.set_ylim([0, Height.max()])
-        #ax_cld_jac0.set_xticks(chans)
-        #ax_cld_jac1.set_xticks(chans)
-        ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
-        #f.colorbar(s1,label='Reflectivity [dbZ]')
-        #f.colorbar(s2,label='Reflectivity Attenuated [dBZ]')
-        plt.tight_layout()
-        plt.savefig(sensor_id+'_'+c+'_reflectivity.png')
+    idx3 = np.where(zz3>-9000)
+    idx4 = np.where(zz4>-9000)
+    tol = 1e-6
+    tstMax3 = abs(zz3[idx3].max() - 30.21725448020621) < tol 
+    tstMax4 = abs(zz4[idx4].max() - 24.95743632633681) < tol
+    tstMin3 = abs(zz3[idx3].min() - 29.50054261447972) < tol
+    tstMin4 = abs(zz4[idx4].min() - - 59.492652913112856) < tol
+    if(tstMax3 and tstMax4 and tstMin3 and tstMin4):
+        print('Yay! Min/Max reflectivities passed')
+    else:
+        print('Boo! something failed.')
+        print('val, tol',abs(zz3[idx3].max() - 30.21725448020621), tol )
+        print('val, tol',abs(zz4[idx4].max() - 24.95743632633681) , tol)
+        print('val, tol',abs(zz3[idx3].min() - 29.50054261447972) , tol)
+        print('val, tol',abs(zz4[idx4].min() - - 59.492652913112856) , tol)
+    if(plotMe):
+        for i,c in enumerate(cases):
+            f,(ax_cld_refl0,ax_cld_refl1,ax_cld_conc) = plt.subplots( ncols=3,nrows=1,figsize=(24,5) )
+            freq = crtmOb.frequencyGHz
+            chans = []
+            for ii,ff in enumerate(freq):
+                iii=ii+1
+                chans.append(iii)
+            chans = np.asarray(chans)     
+            pgrid,nu_grid = np.meshgrid(chans,profiles.P[i,:])
+            idx, = np.where(zz3[i,0,:]>-9000)
+            ax_cld_refl0.scatter(zz3[i,0,idx], Height[i,idx])
+            idx, = np.where(zz4[i,0,:]>-9000)
+            ax_cld_refl1.scatter(zz4[i,0,idx],Height[i,idx])
+            ax_cld_conc.scatter(profiles.clouds[i,:,0,0],Height[i,:])
+            ax_cld_refl0.set_ylabel('Height [km]')
+            ax_cld_refl0.set_xlabel('Reflectivity [dBz]')
+            ax_cld_refl1.set_xlabel('Reflectivity Attenuated [dBz]')
+            ax_cld_refl0.set_ylim([0, Height.max()])
+            ax_cld_refl1.set_ylim([0, Height.max()])
+            ax_cld_conc.set_ylim([0, Height.max()])
+            ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
+            plt.tight_layout()
+            plt.savefig(sensor_id+'_'+c+'_reflectivity.png')
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser( description = "Jacobian output test for CrIS NSR.")
+    parser.add_argument('--plot',help="Plot Jacobians flag",dest='plotme',action='store_true')
+    a = parser.parse_args()
     sensor_id = 'cpr_cloudsat'
-    main(sensor_id)
+    main(sensor_id,a.plotme)
  
