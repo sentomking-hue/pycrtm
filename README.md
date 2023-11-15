@@ -18,28 +18,20 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-- For the novice that doesn't care about where or how this installs, look at the crtm-bundle and run kickstart_pyCRTM.sh Otherwise...
-- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). Note crtm must be built with the static option (`ecbuild --static`) 
+- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). 
 - Configuration
-First modify `setup.cfg` to point to the crtm install location (path underneath should contain `lib/libcrtm.a`). 
+First modify `setup.cfg` to point to the crtm install location (path underneath should contain one of the following: `lib/libcrtm.a`,`lib64/libcrtm.a`, `lib/libcrtm.so`, or `lib64/libcrtm.so`). 
 ```
-[Setup]
 # Specify the location of the crtm install (ecbuild install ONLY)
-crtm_install = /discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm/build
-# Download Coefficients
-# Controls whether coefficients are downloaded
-download = True
-#This will move the coefficients with the package install.
-coef_with_install = True
+crtm_install = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/
+link_from_source_to_path_used = True
 [Coefficients]
-# Use to specify alternative coefficient file location where Little Endian Coefficient files are stored.
-# If user desires coefficients to be stored with the installed package, leave this alone.
-# If user selects coef_with_install = False, this must be specified.
-# set argument below (path) to the full path of the coefficients.
-path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
+# source specify coefficient directory will grab little endian binary coefficients and netcdf and link them to path_used
+source_path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/test_data/crtm
+# path used by pycrtm to read coefficients 
+path_used =  /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/pycrtmV3cmake/coefficients
 ```
-In the example above the coefficients will be included with the pycrtm install. To change this, set `coef_with_install` and set `path` to the location where you would like crtm coefficients stored. If you already have a directory with coefficients, you can set `download` and `coef_with_install` to False, and set `path` to that location. The pycrtm configuration will then point to the location in `path`.  
-
+Next, pycrtm must have a location where all desired coefficients are expanded in a flat directory. In the configuration above, the installer will create `path_used` and populate it with symbolic links to all available coefficients in `source_path.` If `link_from_source_to_path_used` is set to `False`, `source_path` will be ignored and it is assumed the user has placed coefficients in `path_used` and pyCRTM will search for coefficients in this directory. 
 - Installation 
 There are two recommended ways to install. The first, if the user has full write access to their python distribution, it may be installed globally using:
 ```
