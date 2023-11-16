@@ -54,6 +54,11 @@ RAIN_CLOUD = 3
 SNOW_CLOUD = 4
 GRAUPEL_CLOUD = 5
 HAIL_CLOUD = 6
+RT_ADA = 56
+RT_SOI = 168
+RT_AMOM =  56
+RT_VMOM =  62  
+
 
 def profilesCreate( nProfiles, nLevels, nAerosols=1, nClouds=1, additionalGases=[] ):
     keys  = [ 'P', 'T', 'Q', 'O3']
@@ -175,6 +180,7 @@ class pyCRTM:
         self.CloudCoeff_File = 'CloudCoeff.bin'
         self.Height = []
         self.output_attenuated = True # logical to flip reflectivity in active sensor mode
+        self.Algorithm = RT_ADA
     def loadInst(self):
         binPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin')
         ncPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc')
@@ -267,7 +273,8 @@ class pyCRTM:
         else:
             self.nChan = self.channelSubset.shape[0]
         if(self.Active == False): 
-            self.Bt = pycrtm.wrap_forward( self.coefficientPath, 
+            self.Bt = pycrtm.wrap_forward( self.coefficientPath,
+                                           self.Algorithm, 
                                            self.sensor_id,
                                            self.channelSubset,
                                            self.subsetOn,
@@ -366,7 +373,7 @@ class pyCRTM:
         else: use_passed=False                  
         self.setupGases() 
        
-        #print(pycrtm.wrap_k_matrix.__doc__) 
+        # print(pycrtm.wrap_k_matrix.__doc__) 
         if('aerosolType' in list(self.profiles._asdict().keys())): 
             pycrtm.aerosoltype = self.profiles.aerosolType
             pycrtm.aerosoleffectiveradius = self.profiles.aerosols[:,:,:,1]
@@ -401,6 +408,7 @@ class pyCRTM:
             self.Bt, self.TK, traceK, self.SkinK, self.SurfEmisK, self.ReflK,self.WindSpeedK, self.windDirectionK,\
             self.CloudEffectiveRadiusK, self.CloudConcentrationK, self.CloudFractionK,\
             self.AerosolEffectiveRadiusK, self.AerosolConcentrationK                                           =  pycrtm.wrap_k_matrix(  self.coefficientPath,
+                                                                                                                                         self.Algorithm,
                                                                                                                                          self.sensor_id,
                                                                                                                                          self.channelSubset,
                                                                                                                                          self.subsetOn,

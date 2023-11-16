@@ -15,7 +15,7 @@ REAL(KIND=8), ALLOCATABLE :: emissivityReflectivity(:,:,:) ! 2,N_profiles, nChan
 
 CONTAINS
 
-SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
+SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag, cld_nc, aer_nc, &
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &
@@ -40,6 +40,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   ! ============================================================================
   ! variables for interface
   CHARACTER(len=*), INTENT(IN) :: coefficientPath
+  INTEGER, INTENT(IN) :: Algorithm
   CHARACTER(len=*), INTENT(IN) :: sensor_id_in
   INTEGER, INTENT(IN) :: channel_subset(nChan)
   CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
@@ -244,22 +245,16 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
   CALL check_LOGICAL_status( any(.not. crtm_rtsolution_associated( rts ) ),'rts failed to create.') 
 
   CALL crtm_options_create( options, nChan )
+
+  options%RT_Algorithm_ID = Algorithm
+
   CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create.' )
-  !err_stat = CRTM_Forward( atm        , &  ! Input
-  !                         sfc        , &  ! Input
-  !                         geo        , &  ! Input
-  !                         chinfo     , &  ! Input
-  !                         rts        , &  ! Output
-  !                         options = options ) 
   err_stat = CRTM_Forward( atm        , &  ! Input
                            sfc        , &  ! Input
                            geo        , &  ! Input
                            chinfo     , &  ! Input
-                           rts        ) ! Output
-  
-
-
-
+                           rts        , &  ! Output
+                           options = options ) 
 
   CALL check_allocate_status(err_stat, "Error CALLING CRTM_Forward.")
 
@@ -331,7 +326,7 @@ SUBROUTINE wrap_forward( coefficientPath, sensor_id_in, channel_subset, subset_o
 
 end SUBROUTINE wrap_forward
 
-SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
+SUBROUTINE wrap_k_matrix( coefficientPath, Algorithm, sensor_id_in, channel_subset, subset_on, & 
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag, output_cloud_jacobian,output_aerosol_jacobian,&
                         cld_nc, aer_nc, & 
@@ -371,6 +366,7 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
 
   ! variables for interface
   CHARACTER(len=*), INTENT(IN) :: coefficientPath
+  Integer, INTENT(IN) :: Algorithm
   CHARACTER(len=*), INTENT(IN) :: sensor_id_in
   INTEGER, INTENT(IN) :: channel_subset(nChan)
   CHARACTER(len=*), INTENT(IN) :: AerosolCoeff_File
@@ -628,15 +624,8 @@ SUBROUTINE wrap_k_matrix( coefficientPath, sensor_id_in, channel_subset, subset_
   CALL crtm_options_create( options, nChan )
   CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create' )
 
-!  err_stat = CRTM_K_Matrix( atm        , &  ! FORWARD  Input
-!                            sfc        , &  ! FORWARD  Input
-!                            rts_K      , &  ! K-MATRIX Input
-!                            geo        , &  ! Input
-!                            chinfo     , &  ! Input
-!                            atm_K      , &  ! K-MATRIX Output
-!                            sfc_K      , &  ! K-MATRIX Output
-!                            rts        , &  ! FORWARD  Output
-!                            Options=options)
+  options%RT_Algorithm_ID = Algorithm
+
   err_stat = CRTM_K_Matrix( atm        , &  ! FORWARD  Input
                             sfc        , &  ! FORWARD  Input
                             rts_K      , &  ! K-MATRIX Input
