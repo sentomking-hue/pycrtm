@@ -2,7 +2,7 @@
 
 ## Bryan M. Karpowicz, Ph.D. - USRA/GESTAR/NASA 610.1 Global Modeling and Assimilation Office, with Contributions from Patrick Stegmann, Dr.-Ing. - JCSDA
 
-This is a basic python interface to CRTM v2.4.0. 
+This is a basic python interface to CRTM v2.4.x or CRTMv3. 
 
 The user interface is designed to be very similar to the python RTTOV interface. So, the user sets profiles, passes them to an object for a desired sensor, runs either the forward model/K-matrix, and pulls the brightness temperature/Jacobian/transmission/emissivity out of the object.  
 
@@ -82,6 +82,17 @@ The following scripts will run CRTM without aerosols or clouds:
 
 For those Jupyter notebook fans, there is even Jupyter notebook example simulating ATMS:
 * `$PWD/testCases/test_atms.ipynb`
+
+Additonal More Advanced Examples:
+* `$PWD/testCases/test_atms_jacobian.py` Provides cloud jacobians (provide --plot command line argument to generate plot)
+* `$PWD/testCases/test_atms_subset_cloudnames.py` Provides example of using a channel subset, along with Cloud type names.
+* `$PWD/testCases/test_atms_subset.py` Provides exmaple using a channel subset.
+* `$PWD/testCases/test_cris_jacobian.py` Provides cloud/aerosol jacobians (provide --plot command line argument to generate plot)
+* `$PWD/testCases/test_cris_subset.py` Provides exmaple using a channel subset.
+
+Active Sensor Examples (Available with CRTMv3.1.x)
+* `$PWD/testCases/test_cloudsat.py` tests forward model of active sensor (provide --plot for plot of reflectivity/attenuated reflectivity)
+* `$PWD/testCases/test_cloudsat_jacobian.py` tests cloud jacobians (provide --plot for cloud jacobian plot, --attenuated for attenuated reflectivity, otherwise jacobians of reflectivity are plotted.
 
 ## 3. Importing 
 
