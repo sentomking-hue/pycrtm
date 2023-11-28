@@ -12,6 +12,8 @@ def main(sensor_id,plotMe):
     profiles = profilesCreate( 4, 92)
     storedTb = []
     storedEmis = []
+    # Make Reff BIG, so the correct number of streams is used:
+    Reff = 1000 
     # populate the cases, and previously calculated Tb from crtm test program.    
     for i,c in enumerate(cases):
         h5 = h5py.File(os.path.join(thisDir,'data',c) , 'r')
@@ -32,10 +34,16 @@ def main(sensor_id,plotMe):
         zzz = np.zeros(np.asarray(h5['cloudConcentration']).shape)
         cld = zzz
         cld[idx] = 5
+        # note: For Moradi DDA cloud coefficients (only ones that work with active sensor)
+        #       cloud effective radius is not used to lookup optical properties.
+        #       HOWEVER, effective radius is used to determine the number of streams used
+        #       by the radiative transfer. To avoid strange results, set the effective radius
+        #       to a large size parameter to utilize the maximum number of streams.
+             
         profiles.clouds[i,:,0,0] = cld #np.asarray(h5['cloudConcentration'])
         zzz = np.zeros(np.asarray(h5['cloudConcentration']).shape)
         cld = zzz
-        cld[idx] = 1000 
+        cld[idx] = Reff 
         profiles.clouds[i,:,0,1] = cld #np.asarray(h5['cloudEffectiveRadius'])
         profiles.aerosols[i,:,0,0] = np.asarray(h5['aerosolConcentration'])
         profiles.aerosols[i,:,0,1] = np.asarray(h5['aerosolEffectiveRadius'])
@@ -75,6 +83,26 @@ def main(sensor_id,plotMe):
     
     crtmOb.runDirect()
     forwardReflectivity = crtmOb.Reflectivity
+
+    #! Compute the Mie parameter, 2.pi.Reff/lambda
+    # Reff in microns
+    MieParameter = 2.0 * np.pi * Reff * crtmOb.wavenumber/10000.0
+
+    #! Determine the number of streams based on Mie parameter as done in CRTM
+    if ( MieParameter < 0.01 ):
+        nStreams = 2
+    elif ( MieParameter < 1.0 ):
+        nStreams = 4
+    else:
+        nStreams = 6
+    if(nStreams == 6):
+        print("nStreams based of Reff is correct :",nStreams)
+    else:
+        print("nStreams based of Reff is wrong :",nStreams)
+
+
+
+
     forwardReflectivityAttenuated = crtmOb.ReflectivityAttenuated
     Height= crtmOb.Height
     zz3 = forwardReflectivity
@@ -117,8 +145,8 @@ def main(sensor_id,plotMe):
             ax_cld_conc.set_ylim([0, Height.max()])
             ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
             plt.tight_layout()
-            plt.savefig(sensor_id+'_'+c+'_reflectivity.png')
-
+            plt.savefig(sensor_id+'_'+c+'_reflectivity.png') 
+            
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = "Jacobian output test for CrIS NSR.")
     parser.add_argument('--plot',help="Plot Jacobians flag",dest='plotme',action='store_true')

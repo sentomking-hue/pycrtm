@@ -12,7 +12,11 @@ def main(sensor_id,plotme,atten):
     profiles = profilesCreate( 4, 92 )
     storedTb = []
     storedEmis = []
-    # populate the cases, and previously calculated Tb from crtm test program.    
+    # Make Reff large so correct number of streams is used
+    Reff = 1000
+
+    # populate the cases, and previously calculated Tb from crtm test program. 
+       
     for i,c in enumerate(cases):
         h5 = h5py.File(os.path.join(thisDir,'data',c) , 'r')
         profiles.Angles[i,0] = 1.0
@@ -33,9 +37,15 @@ def main(sensor_id,plotme,atten):
         cld = zzz
         cld[idx] = 5
         profiles.clouds[i,:,0,0] = cld 
+        # note: For Moradi DDA cloud coefficients (only ones that work with active sensor)
+        #       cloud effective radius is not used to lookup optical properties.
+        #       HOWEVER, effective radius is used to determine the number of streams used
+        #       by the radiative transfer. To avoid strange results, set the effective radius
+        #       to a large size parameter to utilize the maximum number of streams.
+ 
         zzz = np.zeros(np.asarray(h5['cloudConcentration']).shape)
         cld = zzz
-        cld[idx]=10 
+        cld[idx] = Reff 
         profiles.clouds[i,:,0,1] = cld 
         profiles.aerosols[i,:,0,0] = np.asarray(h5['aerosolConcentration'])
         profiles.aerosols[i,:,0,1] = np.asarray(h5['aerosolEffectiveRadius'])
@@ -75,7 +85,6 @@ def main(sensor_id,plotme,atten):
     crtmOb.output_cloud_K = True
     crtmOb.output_attenuated = atten
     crtmOb.loadInst()
-
     
     crtmOb.runK()
     Refl = crtmOb.ReflectivityAttenuated
@@ -84,23 +93,40 @@ def main(sensor_id,plotme,atten):
     zz5=crtmOb.CloudFractionK
     Height = crtmOb.Height
     tol = 1e-6
+    #! compute the mie parameter, 2.pi.reff/lambda
+    # Reff in microns
+    MieParameter = 2.0 * np.pi * Reff * crtmOb.wavenumber/10000.0
+
+    #! determine the number of streams based on mie parameter as done in crtm
+    if ( MieParameter < 0.01 ):
+        nstreams = 2
+    elif ( MieParameter < 1.0 ):
+        nstreams = 4
+    else:
+        nstreams = 6
+
+    if(nstreams == 6):
+        print("nstreams based of reff is correct :",nstreams)
+    else:
+        print("nstreams based of reff is wrong :",nstreams)
+
 
     if(atten):
         tstMax3 = abs(zz3.max() - 0.0) < tol 
         tstMax4 = abs(zz4.max() - 0.0) < tol
-        tstMax5 = abs(zz5.max() - 40.950799018553084) < tol
+        tstMax5 = abs(zz5.max() - 41.57776071153529) < tol
         tstMin3 = abs(zz3.min() - 0.0) < tol
-        tstMin4 = abs(zz4.min() - -16.29535606938384) < tol
+        tstMin4 = abs(zz4.min() - -16.532941553040253) < tol
         tstMin5 = abs(zz5.min() - 0.0) < tol
         if(tstMax3 and tstMax4 and tstMin3 and tstMin4 and tstMin5):
             print('Yay! Min/Max reflectivities passed')
         else:
             print('Boo! something failed.')
             print('val, tol',abs(zz3.max() - 0), tol )
-            print('val, tol',abs(zz4.max() - 40.950799018553084) , tol)
+            print('val, tol',abs(zz4.max() - 41.57776071153529) , tol)
             print('val, tol',abs(zz5.max() - 0) , tol)
             print('val, tol',abs(zz3.min() - 0), tol )
-            print('val, tol',abs(zz4.min() - -16.29535606938384) , tol)
+            print('val, tol',abs(zz4.min() - -16.532941553040253) , tol)
             print('val, tol',abs(zz5.min() - 0.0) , tol)
     else:
         tstMax3 = abs(zz3.max() - 0.0) < tol 
@@ -119,6 +145,7 @@ def main(sensor_id,plotme,atten):
             print('val, tol',abs(zz3.min() - 0), tol )
             print('val, tol',abs(zz4.min() - 0) , tol)
             print('val, tol',abs(zz5.min() - - 4.3429448190325175) , tol)
+ 
     if(plotme):
         for i,c in enumerate(cases):
             f,(ax_cld_refl0,ax_cld_refl1,ax_cld_refl2,ax_cld_conc) = plt.subplots( ncols=4,nrows=1,figsize=(24,5) )
@@ -134,7 +161,7 @@ def main(sensor_id,plotme,atten):
             ax_cld_refl2.scatter(zz5[0,i,idx],Height[i,idx])
             ax_cld_conc.scatter(profiles.clouds[i,:,0,0],Height[i,:])
             ax_cld_refl0.set_ylabel('Height [km]')
-            ax_cld_refl0.set_xlabel('Reflectivity Jacobian [dBz/um]')
+            ax_cld_refl0.set_xlabel('Reflectivity Jacobian [dBz/$\mu$m]')
             ax_cld_refl1.set_xlabel('Reflectivity Jacobian [dBz/kg m$^{-2}$]')
             ax_cld_refl2.set_xlabel('Reflectivity Jacobian [dBz/Cloud Fraction]')
             ax_cld_refl0.set_ylim([0, Height.max()])
@@ -143,6 +170,7 @@ def main(sensor_id,plotme,atten):
             ax_cld_conc.set_ylim([0, Height.max()])
             ax_cld_conc.set_xlabel('Concentration [kg m$^{-2}]$')   
             plt.tight_layout()
+            print("note: Jacobian is zero for effective radius, because it isn't used in DDA scattering table.")
             plt.savefig(sensor_id+'_'+c+'_reflectivity_jacobian.png')
 
    
