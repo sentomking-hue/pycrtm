@@ -218,6 +218,8 @@ def readSpcCoeff(fname):
     fmt = '{:d}i'.format(n_Channels)
     o['Sensor_Channel'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
     o['Polarization'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
+    if(o['version']>2):
+        o['PolAngle'] = struct.unpack('{:d}d'.format(n_Channels),f.read(struct.calcsize('{:d}d'.format(n_Channels))))
     o['Channel_Flag'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
 
     fmt = '{:d}d'.format(n_Channels)
