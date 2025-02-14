@@ -174,10 +174,25 @@ class pyCRTM:
         self.ReflectivityAttenuated = []
         self.CloudNcBin = 'Binary'
         self.AerosolNcBin = 'Binary'
+        self.CoefNcBin = 'Binary'
         self.MWwaterCoeff_File = 'FASTEM6.MWwater.EmisCoeff.bin'
         self.IRwaterCoeff_File = 'Nalli.IRwater.EmisCoeff.bin'
         self.AerosolCoeff_File = 'AerosolCoeff.bin'
         self.CloudCoeff_File = 'CloudCoeff.bin'
+        if(not os.path.exists(os.path.join(self.coefficientPath,self.MWwaterCoeff_File))):
+            self.MWwaterCoeff_File = 'FASTEM6.MWwater.EmisCoeff.nc'
+            self.CloudNcBin = 'netCDF' 
+        if(not os.path.exists(os.path.join(self.coefficientPath,self.IRwaterCoeff_File))):
+            self.IRwaterCoeff_File = 'Nalli.IRwater.EmisCoeff.nc'
+            self.CloudNcBin = 'netCDF' 
+        if(not os.path.exists(os.path.join(self.coefficientPath,self.AerosolCoeff_File))):
+            self.IRwaterCoeff_File = 'AerosolCoeff.nc'
+            self.CloudNcBin = 'netCDF' 
+        if(not os.path.exists(os.path.join(self.coefficientPath,self.CloudCoeff_File))):
+            self.IRwaterCoeff_File = 'CloudCoeff.nc'
+            self.CloudNcBin = 'netCDF' 
+ 
+        
         self.Height = []
         self.output_attenuated = True # logical to flip reflectivity in active sensor mode
         self.Algorithm = RT_ADA
@@ -185,11 +200,19 @@ class pyCRTM:
         binPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.bin')
         ncPath = os.path.join(self.coefficientPath, self.sensor_id+'.SpcCoeff.nc')
         if ( os.path.exists( binPath )  ):
-            o = readSpcCoeff( binPath )
-        elif ( os.path.exists( ncPath ) ): 
-            o = readSpcCoeffNc( ncath )
+            try:
+                o = readSpcCoeff( binPath )
+            except:
+                print('Wrong Endian Binary Found.')
+                if(not os.path.exists(ncPath)):
+                    print('Problem. No Coefficients Valid (litte endian) here: {}'.format(self.coefficientPath))
+                    sys.exit()
+        if ( os.path.exists( ncPath ) ):
+            print('Using netCDF.') 
+            o = readSpcCoeffNc( ncPath )
+            self.CoefNcBin = 'netCDF'
         if ( os.path.exists(ncPath) or os.path.exists(binPath)):
-            self.nChanTotal = o['n_Channels']
+            self.nChanTotal = len(o['Wavenumber']) 
             self.channelSubset = np.arange(self.nChanTotal,dtype=np.int16)+1
             # For those who care to associate channel number with something physical:
             # just to save sanity put the permutations of (W/w)avenumber(/s) in here so things just go.
@@ -286,6 +309,7 @@ class pyCRTM:
                                            self.StoreTrans,
                                            self.CloudNcBin ,
                                            self.AerosolNcBin,
+                                           self.CoefNcBin,
                                            self.profiles.Angles[:,0], 
                                            self.profiles.Angles[:,4], 
                                            self.profiles.Angles[:,1], 
@@ -331,6 +355,7 @@ class pyCRTM:
                                                                                           self.MWwaterCoeff_File,
                                                                                           self.CloudNcBin ,
                                                                                           self.AerosolNcBin,
+                                                                                          self.CoefNcBin,
                                                                                           self.profiles.Angles[:,0],
                                                                                           self.profiles.Angles[:,4],
                                                                                           self.profiles.Angles[:,1],
@@ -422,6 +447,7 @@ class pyCRTM:
                                                                                                                                          self.output_aerosol_K,
                                                                                                                                          self.CloudNcBin,
                                                                                                                                          self.AerosolNcBin,
+                                                                                                                                         self.CoefNcBin,
                                                                                                                                          self.profiles.Angles[:,0], 
                                                                                                                                          self.profiles.Angles[:,4], 
                                                                                                                                          self.profiles.Angles[:,1], 

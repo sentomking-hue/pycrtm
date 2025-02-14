@@ -17,7 +17,7 @@ CONTAINS
 
 SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
-                        output_tb_flag, output_transmission_flag, cld_nc, aer_nc, &
+                        output_tb_flag, output_transmission_flag, cld_nc, aer_nc, coef_nc, &
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &
                         surf_lat, surf_lon, surf_height, & 
                         output_emissivity_flag, use_passed_emissivity, & 
@@ -50,6 +50,7 @@ SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subse
   LOGICAL,          INTENT(IN) :: subset_on, output_tb_flag, output_transmission_flag, output_emissivity_flag 
   CHARACTER(len=*), INTENT(IN) :: cld_nc
   CHARACTER(len=*), INTENT(IN) :: aer_nc
+  CHARACTER(len=*), INTENT(IN) :: coef_nc
   LOGICAL,          INTENT(IN) :: use_passed_emissivity
   ! The scan angle is based
   ! on the default Re (earth radius) and h (satellite height)
@@ -142,6 +143,8 @@ SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subse
                         Load_AerosolCoeff = aerosolsOn, &
                         CloudCoeff_Format = cld_nc,&
                         AerosolCoeff_Format = aer_nc,&
+                        SpcCoeff_Format = coef_nc,&
+                        TauCoeff_Format = coef_nc,&
                         CloudCoeff_File = CloudCoeff_File, &  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
@@ -329,7 +332,7 @@ end SUBROUTINE wrap_forward
 SUBROUTINE wrap_k_matrix( coefficientPath, Algorithm, sensor_id_in, channel_subset, subset_on, & 
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_tb_flag, output_transmission_flag, output_cloud_jacobian,output_aerosol_jacobian,&
-                        cld_nc, aer_nc, & 
+                        cld_nc, aer_nc, coef_nc, & 
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
                         surf_lat, surf_lon, surf_height, &
                         output_emissivity_flag, use_passed_emissivity, & 
@@ -377,6 +380,7 @@ SUBROUTINE wrap_k_matrix( coefficientPath, Algorithm, sensor_id_in, channel_subs
   LOGICAL, INTENT(IN) :: output_cloud_jacobian,output_aerosol_jacobian, use_passed_emissivity 
   CHARACTER(len=*), INTENT(IN) :: cld_nc
   CHARACTER(len=*), INTENT(IN) :: aer_nc
+  CHARACTER(len=*), INTENT(IN) :: coef_nc
   INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
   INTEGER, INTENT(IN) :: nchan_jacobian, nprof_jacobian, nlayers_jacobian, nclouds_jacobian,naerosols_jacobian 
   ! The scan angle is based
@@ -1213,7 +1217,7 @@ end SUBROUTINE wrap_forward_active
 SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, subset_on, & 
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
                         output_attenuated, output_cloud_jacobian, output_aerosol_jacobian,&
-                        cld_nc, aer_nc, & 
+                        cld_nc, aer_nc, coef_nc, & 
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &  
                         surf_lat, surf_lon, surf_height, &
                         year, month, day, & 
@@ -1258,6 +1262,7 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
   LOGICAL, INTENT(IN) :: output_cloud_jacobian, output_aerosol_jacobian
   CHARACTER(len=*), INTENT(IN) :: cld_nc
   CHARACTER(len=*), INTENT(IN) :: aer_nc
+  CHARACTER(len=*), INTENT(IN) :: coef_nc
   INTEGER, INTENT(IN) :: nChan, N_profiles, N_Layers, N_trace 
   INTEGER, INTENT(IN) :: nchan_jacobian, nprof_jacobian, nlayers_jacobian, nclouds_jacobian,naerosols_jacobian 
   ! The scan angle is based
@@ -1354,7 +1359,9 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
                         Load_AerosolCoeff = aerosolsOn, &
                         CloudCoeff_Format = cld_nc,&
                         AerosolCoeff_Format = aer_nc,&
-                        CloudCoeff_File = CloudCoeff_File, &  
+                        CloudCoeff_File = CloudCoeff_File, &
+                        SpcCoeff_Format = coef_nc,&
+                        TauCoeff_Format = coef_nc,&  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
                         MWwaterCoeff_File = MWwaterCoeff_File, & 

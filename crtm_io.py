@@ -20,8 +20,9 @@ def findLib(thisDir):
     if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
         libdir = os.path.join( setupdir, 'lib')
     elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
-        libdir = os.path.join( setupdir, 'lib64') 
-
+        libdir = os.path.join( setupdir, 'lib64')
+    else:
+        libdir = os.path.join(setupdir,'') 
     so = glob.glob(os.path.join(libdir,'*.so')) 
     if(len(so)>0):
         return libdir
@@ -39,7 +40,7 @@ def setLD_LIBRARY_PATH(libdir):
         if(libdir not in os.environ["LD_LIBRARY_PATH"]):
             os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
             os.execv(sys.argv[0], sys.argv)
-    else:
+    elif(len(libdir)>0):
         if(libdir not in os.environ["LD_LIBRARY_PATH"]):
             os.environ["LD_LIBRARY_PATH"] = libdir
             os.execv(sys.argv[0], sys.argv)
@@ -251,6 +252,9 @@ def readSpcCoeffNc(fname):
     ds = netCDF4.Dataset(fname,'r')
     for v in ds.variables:
         o[v] = np.asarray(ds.variables[v])
+
+    for v in list(ds.ncattrs()):
+        o[v.lower()] = np.asarray(ds.getncattr(v))
     return o
 
 if __name__ == "__main__":

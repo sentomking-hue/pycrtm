@@ -19,8 +19,10 @@ endif()
 
 if (EXISTS $ENV{CRTM_INSTALL}/lib64/)
     set(crtm_LIB $ENV{CRTM_INSTALL}/lib64/)
-else()
+elseif(EXISTS $ENV{CRTM_INSTALL}/lib/)
     set(crtm_LIB $ENV{CRTM_INSTALL}/lib/)
+else()
+    set(crtm_LIB $ENV{CRTM_INSTALL})
 endif()   
 
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel")
