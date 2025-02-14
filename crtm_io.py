@@ -23,11 +23,41 @@ def findLib(thisDir):
         libdir = os.path.join( setupdir, 'lib64')
     else:
         libdir = os.path.join(setupdir,'') 
-    so = glob.glob(os.path.join(libdir,'*.so')) 
+    so = glob.glob(os.path.join(libdir,'*.so'))
     if(len(so)>0):
         return libdir
     else:
         return ""
+def findLibDyld(thisDir):
+    """
+    Find crtm library and check for shared library *.so. If so is found, return
+    library path, otherwise return nothing to use static library.
+    """
+    cfg = configparser.ConfigParser()
+    if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
+        pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
+    else:
+        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-2.0.1.dist-info','RECORD'))
+        lines = f.readlines()
+        for l in lines:
+            if('pycrtm_setup.txt' in l):
+                pycrtm_setup_dir = l.split('.txt')[0]
+                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+    cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
+    setupdir = cfg['Setup']['crtm_install']
+    if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
+        libdir = os.path.join( setupdir, 'lib')
+    elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
+        libdir = os.path.join( setupdir, 'lib64')
+    else:
+        libdir = os.path.join(setupdir,'') 
+    so = glob.glob(os.path.join(libdir,'libcrtm.*'))
+    if(len(so)>0):
+        return libdir
+    else:
+        return ""
+
+
 
 def setLD_LIBRARY_PATH(libdir):
     """
@@ -41,9 +71,30 @@ def setLD_LIBRARY_PATH(libdir):
             os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
             os.execv(sys.argv[0], sys.argv)
     elif(len(libdir)>0):
-        if(libdir not in os.environ["LD_LIBRARY_PATH"]):
-            os.environ["LD_LIBRARY_PATH"] = libdir
-            os.execv(sys.argv[0], sys.argv)
+        os.environ["LD_LIBRARY_PATH"] = libdir
+        #os.execv(sys.argv[0], sys.argv)
+
+def setDYLD_LIBRARY_PATH(libdir):
+    """
+    Warn user if dyld, that you need to set environment variable.
+    """   
+    #Set the LD_LIBRARY_PATH to make it possible to used shared object. 
+    so = glob.glob(os.path.join(libdir,'libcrtm.*')) 
+    old_ld = os.environ.get("DYLD_LIBRARY_PATH")
+    if(len(so)>0):
+        if old_ld:
+            if(libdir not in os.environ["DYLD_LIBRARY_PATH"]):
+                #os.environ["DYLD_LIBRARY_PATH"] = old_ld + ":" + libdir
+                print('set DYLD_LIBRARY_PATH!')
+                print('export DYLD_LIBRARY_PATH={}'.format(libdir))
+                os.execv(sys.argv[0], sys.argv)
+        elif(len(libdir)>0):
+            #os.environ["DYLD_LIBRARY_PATH"] = libdir
+             print('set DYLD_LIBRARY_PATH!')
+             print('export DYLD_LIBRARY_PATH={}'.format(libdir))
+             sys.exit()
+             #os.execv(sys.argv[0], sys.argv)
+
 
 def crtmLevelsToLayers( pLevels ):
     num = pLevels[1::] - pLevels[0:pLevels.shape[0]-1]

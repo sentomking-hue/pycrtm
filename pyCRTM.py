@@ -4,13 +4,18 @@ import os, sys, h5py, netCDF4
 import numpy as np
 thisDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,thisDir)
-from crtm_io import readSpcCoeff, readSpcCoeffNc, findLib, setLD_LIBRARY_PATH
+from crtm_io import readSpcCoeff, readSpcCoeffNc, findLib, findLibDyld, setLD_LIBRARY_PATH,  setDYLD_LIBRARY_PATH
 sharedLibPath = findLib(thisDir)
 # sharedLibPath has a shared object, append to LD_LIBRARY_PATH
 if(len(sharedLibPath) > 0):
     setLD_LIBRARY_PATH(sharedLibPath)
+else:
+    dyldPath = findLibDyld(thisDir)
+    setDYLD_LIBRARY_PATH(dyldPath)
+#print(sharedLibPath)
+#print(os.environ.get('LD_LIBRARY_PATH'))
 # load f2py pycrtm
-from pycrtm import pycrtm as p
+from pycrtm_ import pycrtm_ as p
 pycrtm = p.pycrtm
 from collections import namedtuple
 # Absorber IDs taken from CRTM.

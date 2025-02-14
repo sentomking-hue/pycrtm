@@ -29,12 +29,12 @@ def main():
         author='Bryan Karpowicz',
         requires=requires,
         include_package_data=True,
-        packages=['pycrtm'],
+        packages=['pycrtm_'],
         py_modules=['crtm_io', 'pyCRTM'],
         package_data={'pyCRTM':['pyCRTM/setup.txt']})
     
     os.remove('MANIFEST.in')
-    os.remove('pycrtm.F90')
+    #os.remove('pycrtm.F90')
 def readSetup(setup_file, scriptDir):
     cfg = configparser.ConfigParser()
     cfg.read( os.path.join(scriptDir,'setup.cfg') )

@@ -34,7 +34,7 @@ else()
 endif()
 
 set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.F90")
-set(f2py_module_name "pycrtm")
+set(f2py_module_name "pycrtm_")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
 #_dumb is used to avoid circular dependency which breaks Ninja.
 add_custom_target(${f2py_module_name}_dumb ALL
@@ -98,4 +98,4 @@ endif()
 list(GET _Python3_INTERPRETER_PROPERTIES 6 version)
 set(produced_so ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.${version}.so)
 #Move to pycrtm directory
-install(FILES ${produced_so} DESTINATION pycrtm)
+install(FILES ${produced_so} DESTINATION pycrtm_)
