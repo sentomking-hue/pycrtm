@@ -1,29 +1,38 @@
-#!/usr/bin/env bash
+#!/bin/sh
 export SEL=$1
 
 if [[ ${SEL} == 'apple_silicon' ]]; then
-	mkdir -p ~/miniconda3
-	curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/miniconda3/miniconda.sh
-	bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-	rm ~/miniconda3/miniconda.sh
+    mkdir -p ~/miniconda3
+    curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/miniconda3/miniconda.sh
+    zsh ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3 
+    rm ~/miniconda3/miniconda.sh
+    source ~/miniconda3/bin/activate
+    conda init --all
 elif [[ ${SEL} == 'apple_intel' ]]; then
-	mkdir -p ~/miniconda3
-	curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o ~/miniconda3/miniconda.sh
-	bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-	rm ~/miniconda3/miniconda.sh
+    mkdir -p ~/miniconda3
+    curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -o ~/miniconda3/miniconda.sh
+    bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    rm ~/miniconda3/miniconda.sh
+    source ~/miniconda3/bin/activate
+    conda init --all
+e
 elif [[ ${SEL} == 'linux' ]]; then
-	mkdir -p ~/miniconda3
-	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-	bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-	rm ~/miniconda3/miniconda.sh
+    mkdir -p ~/miniconda3
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+    bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+    rm ~/miniconda3/miniconda.sh
+    source ~/miniconda3/bin/activate
+    conda init --all
+e
+elif [[ ${SEL} == 'skip' ]]; then
+    echo "Skipping miniconda install. Already installed."    
 else
     echo "Unknown platform selected:${1}"
 	exit 1
 fi
-
-
 export CONDA_VENV='pycrtm'
-conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran cmake git
+conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran cmake git matplotlib
+conda init
 conda activate ${CONDA_VENV}
 
 export PWDOLD=${PWD}
@@ -63,5 +72,10 @@ printf "path_used =${CHECKOUT_PATH}/crtm_coefficients\n" >> setup.cfg
 python3 setup.py install
 
 cd testCases
+if [[ $SEL == 'apple_intel' ]]; then
+    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${PWDOLD}/CRTMv3/build/lib/" 
+elif [[ $SEL == 'skip' ]]; then
+    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${PWDOLD}/CRTMv3/build/lib/" 
+fi
 python3 test_atms.py 
 cd $PWDOLD 
