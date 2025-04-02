@@ -98,4 +98,14 @@ endif()
 list(GET _Python3_INTERPRETER_PROPERTIES 6 version)
 set(produced_so ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.${version}.so)
 #Move to pycrtm directory
+if (EXISTS ${crtm_LIB}/libcrtm.so)
+    set(libcrtm_so ${crtm_LIB}/libcrtm.so)
+endif()
+if (EXISTS ${crtm_LIB}/libcrtm.dylib)
+    set(libcrtm_so ${crtm_LIB}/libcrtm.dylib)
+endif()
+
+
+#Move to pycrtm directory
 install(FILES ${produced_so} DESTINATION pycrtm_)
+install(FILES ${libcrtm_so} DESTINATION pycrtm_)
