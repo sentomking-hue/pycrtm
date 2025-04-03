@@ -15,7 +15,6 @@ elif [[ ${SEL} == 'apple_intel' ]]; then
     rm ~/miniconda3/miniconda.sh
     source ~/miniconda3/bin/activate
     conda init --all
-e
 elif [[ ${SEL} == 'linux' ]]; then
     mkdir -p ~/miniconda3
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
@@ -23,7 +22,6 @@ elif [[ ${SEL} == 'linux' ]]; then
     rm ~/miniconda3/miniconda.sh
     source ~/miniconda3/bin/activate
     conda init --all
-e
 elif [[ ${SEL} == 'skip' ]]; then
     echo "Skipping miniconda install. Already installed."    
 else
@@ -31,7 +29,7 @@ else
 	exit 1
 fi
 export CONDA_VENV='pycrtm'
-conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran cmake git matplotlib
+conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran cmake git git-lfs matplotlib
 conda init
 conda activate ${CONDA_VENV}
 
@@ -45,7 +43,7 @@ mkdir $CHECKOUT_PATH
 echo ${CHECKOUT_PATH}
 cd ${CHECKOUT_PATH}
 echo $PWD
-git clone git@github.com:JCSDA/CRTMv3.git
+git clone https://github.com/JCSDA/CRTMv3.git
 cd CRTMv3
 git checkout v3.1.1+build1
 conda list
@@ -73,9 +71,9 @@ python3 setup.py install
 
 cd testCases
 if [[ $SEL == 'apple_intel' ]]; then
-    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${PWDOLD}/CRTMv3/build/lib/" 
+    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${CHECKOUT_PATH}/CRTMv3/build/lib/" 
 elif [[ $SEL == 'skip' ]]; then
-    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${PWDOLD}/CRTMv3/build/lib/" 
+    export DYLD_LIBRARY_PATH="${DYLD_LIBRARY_PATH}:${CHECKOUT_PATH}/CRTMv3/build/lib/" 
 fi
 python3 test_atms.py 
 cd $PWDOLD 
