@@ -18,6 +18,17 @@ This `README` has 4 parts:
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
+For a quicker install experience users may choose to install using the `make_it_so.sh` which will install conda along with the required packages in a miniconda environment `pycrtm`. There are four options `apple_silicon` for Macs with an M2/M3/M4/M? processor, `apple_intel` to install miniconda for Macs with an intel processor, `linux` for all other linux systems, and `skip` which will skip installing miniconda and use an existing conda install a `pycrtm` miniconda environment. Users are cautioned to look over the script to make sure it will not overwrite existing installs, or fill up your home directory, if space is limited. For example if your system does not have a python install and you a starting from scratch on an M4 Mac simply type:
+```
+./make_it_so.sh apple_silicon 
+```
+The script will install miniconda3, CRTMv3, pyCRTM, and run the `test_atms.py` script to verify pyCRTM is working. If you already have miniconda on your machine you can simply run `skip` which will just install CRTMv3, pyCRTM and the `test_atms.py` script to verify pyCRTM has been installed and is functioning properly. Once installed a user may use the new `pycrtm` conda environment by typing:
+```
+conda activate pycrtm
+```
+
+If that doesn't suit your taste, read on for a more step-by-step approach. 
+
 - Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). 
 - Configuration
 First modify `setup.cfg` to point to the crtm install location (path underneath should contain one of the following: `lib/libcrtm.a`,`lib64/libcrtm.a`, `lib/libcrtm.so`, or `lib64/libcrtm.so`). 
