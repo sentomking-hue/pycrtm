@@ -509,6 +509,7 @@ class pyCRTM:
                                                                                                                                          self.output_aerosol_K,
                                                                                                                                          self.CloudNcBin,
                                                                                                                                          self.AerosolNcBin,
+                                                                                                                                         self.CoefNcBin,
                                                                                                                                          self.profiles.Angles[:,0], 
                                                                                                                                          self.profiles.Angles[:,4], 
                                                                                                                                          self.profiles.Angles[:,1], 

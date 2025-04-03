@@ -909,7 +909,7 @@ END SUBROUTINE wrap_k_matrix
 #ifdef PYCRTM_ACTIVE
 SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, subset_on, &  
                         AerosolCoeff_File,CloudCoeff_File,IRwaterCoeff_File, MWwaterCoeff_File, & 
-                        cld_nc, aer_nc, &
+                        cld_nc, aer_nc, coef_nc, &
                         zenithAngle, scanAngle, azimuthAngle, solarAngle, &
                         surf_lat, surf_lon, surf_height, & 
                         output_emissivity_flag, use_passed_emissivity, & 
@@ -941,6 +941,7 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
   LOGICAL,          INTENT(IN) :: subset_on, output_emissivity_flag 
   CHARACTER(len=*), INTENT(IN) :: cld_nc
   CHARACTER(len=*), INTENT(IN) :: aer_nc
+  CHARACTER(len=*), INTENT(IN) :: coef_nc
   LOGICAL,          INTENT(IN) :: use_passed_emissivity
   ! The scan angle is based
   ! on the default Re (earth radius) and h (satellite height)
@@ -1034,6 +1035,8 @@ SUBROUTINE wrap_forward_active( coefficientPath, sensor_id_in, channel_subset, s
                         Load_AerosolCoeff = aerosolsOn, &
                         CloudCoeff_Format = cld_nc,&
                         AerosolCoeff_Format = aer_nc,&
+                        SpcCoeff_Format = coef_nc,&
+                        TauCoeff_Format = coef_nc,&
                         CloudCoeff_File = CloudCoeff_File, &  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
