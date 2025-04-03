@@ -29,7 +29,7 @@ else
 	exit 1
 fi
 export CONDA_VENV='pycrtm'
-conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran cmake git git-lfs matplotlib
+conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson  cmake git git-lfs matplotlib
 conda init
 conda activate ${CONDA_VENV}
 

@@ -49,6 +49,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       --overwrite-signature
     COMMAND ${F2PY_EXECUTABLE}
       --fcompiler=${switch_fun}
+      --f90flags='-DPYCRTM_ACTIVE'
       -m ${f2py_module_name}
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
@@ -60,7 +61,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -lcrtm
       -lnetcdff
       ${ompFlag}
-      -DPYCRTM_ACTIVE
+      #-DPYCRTM_ACTIVE
       only: 
       wrap_forward 
       wrap_k_matrix
