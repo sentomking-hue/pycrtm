@@ -6,15 +6,11 @@ def findLib(thisDir):
     library path, otherwise return nothing to use static library.
     """
     cfg = configparser.ConfigParser()
-    if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
-        pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
+    if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
+        pycrtm_setup_dir = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
     else:
-        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-2.0.1.dist-info','RECORD'))
-        lines = f.readlines()
-        for l in lines:
-            if('pycrtm_setup.txt' in l):
-                pycrtm_setup_dir = l.split('.txt')[0]
-                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+        print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
+        sys.exit()
     cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
     setupdir = cfg['Setup']['crtm_install']
     if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
@@ -34,15 +30,11 @@ def findLibDyld(thisDir):
     library path, otherwise return nothing to use static library.
     """
     cfg = configparser.ConfigParser()
-    if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
-        pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
+    if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
+        pycrtm_setup_dir = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
     else:
-        f = open(os.path.join(thisDir,'pyCRTM_JCSDA-2.0.1.dist-info','RECORD'))
-        lines = f.readlines()
-        for l in lines:
-            if('pycrtm_setup.txt' in l):
-                pycrtm_setup_dir = l.split('.txt')[0]
-                pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+        print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
+        sys.exit()
     cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
     setupdir = cfg['Setup']['crtm_install']
     if( os.path.exists( os.path.join( setupdir, 'lib') ) ):

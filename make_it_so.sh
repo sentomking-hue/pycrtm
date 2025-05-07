@@ -29,7 +29,7 @@ else
 	exit 1
 fi
 export CONDA_VENV='pycrtm'
-conda create --name ${CONDA_VENV} python=3.11 scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson  cmake git git-lfs matplotlib
+conda create --name ${CONDA_VENV} python scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson  cmake git git-lfs matplotlib
 conda init
 conda activate ${CONDA_VENV}
 
@@ -39,17 +39,17 @@ export PYCRTM_PATH="${PWD}"
 
 
 # checkout and buildtest CRTM
-mkdir $CHECKOUT_PATH
+mkdir ${CHECKOUT_PATH}
 echo ${CHECKOUT_PATH}
 cd ${CHECKOUT_PATH}
-echo $PWD
+echo ${PWD}
 git clone https://github.com/JCSDA/CRTMv3.git
 cd CRTMv3
 git checkout v3.1.1+build1
-conda list
+#conda list
 mkdir build 
 cd build
-cmake ../
+cmake -DBUILD_SHARED_LIBS=OFF ../
 make -j8 
 make install 
 ctest -j8 
@@ -67,7 +67,8 @@ printf "# source specify coefficient directory will grab little endian binary co
 printf "source_path =${CHECKOUT_PATH}/CRTMv3/build/test_data/\n" >> setup.cfg 
 printf "# path used by pycrtm to read coefficients\n" >> setup.cfg 
 printf "path_used =${CHECKOUT_PATH}/crtm_coefficients\n" >> setup.cfg 
-python3 setup.py install
+
+pip install .
 
 cd testCases
 if [[ $SEL == 'apple_intel' ]]; then

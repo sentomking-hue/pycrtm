@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10.2)
 project(skbuild_pycrtm)
 enable_language(Fortran)
+
 list( APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake )
 find_package(F2PY REQUIRED)
 find_package(PythonLibs REQUIRED)
@@ -11,6 +12,8 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${_Python3_NumPy_INCLUDE_DIR})
 include_directories(NetCDF_F90_INCLUDE_DIRS)
 get_filename_component(CDF_LIB_PATH ${NetCDF_Fortran_LIBRARY} DIRECTORY)
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+
 if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
     set(crtm_INCLUDE $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/)
 else()
@@ -32,8 +35,8 @@ else()
     set(ompFlag "-lgomp")
     set(switch_fun "gfortran")
 endif()
-
-set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.F90")
+set(pycrtm_sfx $ENV{PYCRTM_SFX})
+set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.${pycrtm_sfx}")
 set(f2py_module_name "pycrtm_")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
 #_dumb is used to avoid circular dependency which breaks Ninja.
@@ -41,16 +44,13 @@ add_custom_target(${f2py_module_name}_dumb ALL
   DEPENDS ${generated_module_file}
   )
 if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/crtm_active_sensor.mod)
+
   add_custom_command(
     OUTPUT ${generated_module_file}
-    COMMAND ${F2PY_EXECUTABLE}
+    COMMAND python -m numpy.f2py
       -m ${f2py_module_name}
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
-      --overwrite-signature
-    COMMAND ${F2PY_EXECUTABLE}
-      --fcompiler=${switch_fun}
-      --f90flags='-DPYCRTM_ACTIVE'
-      -m ${f2py_module_name}
+    COMMAND python -m numpy.f2py
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
@@ -61,7 +61,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -lcrtm
       -lnetcdff
       ${ompFlag}
-      #-DPYCRTM_ACTIVE
+      -DPYCRTM_ACTIVE
       only: 
       wrap_forward 
       wrap_k_matrix
@@ -72,13 +72,10 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
 else()
   add_custom_command(
     OUTPUT ${generated_module_file}
-    COMMAND ${F2PY_EXECUTABLE}
+    COMMAND python -m numpy.f2py
       -m ${f2py_module_name}
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
-      --overwrite-signature
-    COMMAND ${F2PY_EXECUTABLE}
-      --fcompiler=${switch_fun}
-      -m ${f2py_module_name}
+    COMMAND python -m numpy.f2py
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
@@ -110,3 +107,5 @@ endif()
 #Move to pycrtm directory
 install(FILES ${produced_so} DESTINATION pycrtm_)
 install(FILES ${libcrtm_so} DESTINATION pycrtm_)
+#Move configuration into install 
+install(FILES pycrtm_setup.txt DESTINATION pycrtm_)

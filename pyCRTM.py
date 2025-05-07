@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 import configparser
-import os, sys, h5py, netCDF4
+import os, sys, h5py, netCDF4, traceback
 import numpy as np
 thisDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0,thisDir)
 from crtm_io import readSpcCoeff, readSpcCoeffNc, findLib, findLibDyld, setLD_LIBRARY_PATH,  setDYLD_LIBRARY_PATH
-sharedLibPath = findLib(thisDir)
+
 # sharedLibPath has a shared object, append to LD_LIBRARY_PATH
 
 try:
     from pycrtm_ import pycrtm_ as p
-except:
+except Exception as e1:
+    sharedLibPath = findLib(thisDir)
     if(len(sharedLibPath) > 0):
         setLD_LIBRARY_PATH(sharedLibPath)
         from pycrtm_ import pycrtm_ as p
-    else:
+    elif(sys.platform=='darwin'):
         dyldPath = findLibDyld(thisDir)
-        setDYLD_LIBRARY_PATH(dyldPath)        
+        setDYLD_LIBRARY_PATH(dyldPath)
+    else:
+        print(traceback.format_exc())        
 #print(sharedLibPath)
 #print(os.environ.get('LD_LIBRARY_PATH'))
 # load f2py pycrtm
@@ -128,16 +131,11 @@ class pyCRTM:
     def __init__(self):
         thisDir = os.path.split(os.path.abspath(__file__))[0]
         cfg = configparser.ConfigParser()
-        # for weirdness when doing a distribution wide vs. local install.
-        if ( os.path.exists( os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt') ) ):
-            pycrtm_setup_dir = os.path.join(thisDir,'pyCRTM','pycrtm_setup.txt')
+        if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
+            pycrtm_setup_dir = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
         else:
-            f = open(os.path.join(thisDir,'pyCRTM_JCSDA-2.0.1.dist-info','RECORD'))
-            lines = f.readlines()
-            for l in lines:
-                if('pycrtm_setup.txt' in l):
-                    pycrtm_setup_dir = l.split('.txt')[0]
-                    pycrtm_setup_dir = pycrtm_setup_dir+'.txt'
+            print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
+            sys.exit()
         cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
         self.coefficientPath = cfg['Coefficients']['path_used']+"/"
 

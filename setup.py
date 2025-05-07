@@ -1,4 +1,5 @@
 import os, sys, configparser, shutil, time
+import setuptools
 from skbuild import setup
 def main():
     #Completely remove previous _skbuild, because cache will remember previous interation and ignore you if you change something.
@@ -10,20 +11,22 @@ def main():
     #add .F90 symlink to keep history of pycrtm.f90 
     if( not os.path.exists( os.path.join(scriptDir,'pycrtm.F90'))):
         os.symlink(os.path.join(scriptDir,'pycrtm.f90'),os.path.join(scriptDir,'pycrtm.F90'))
+    if('darwin' in sys.platform):
+        os.environ['PYCRTM_SFX']='f90'
+    else:
+        os.environ['PYCRTM_SFX']='F90'
     #read configuration
     coef_path, coef_dest, crtm_install, link_coef = readSetup('setup.cfg',scriptDir)
     if(link_coef):
         linkCoef(coef_path, coef_dest)
     os.environ['CRTM_INSTALL'] = crtm_install
-    shutil.copy(os.path.join(scriptDir,'setup.cfg'),os.path.join(scriptDir,'pyCRTM','pycrtm_setup.txt'))
+    
+    shutil.copy(os.path.join(scriptDir,'setup.cfg'),os.path.join(scriptDir,'pycrtm_setup.txt'))
 
-    f = open(os.path.join(scriptDir,'MANIFEST.in'),'w')
-    f.write('include pyCRTM/pycrtm_setup.txt crtm_io.py')
-    f.close()
 
     requires=['numpy']
     setup(
-        name="pyCRTM_JCSDA",
+        name="pycrtm_jcsda",
         version='2.0.1',
         description='Python wrapper for the CRTM.',
         author='Bryan Karpowicz',
@@ -31,9 +34,8 @@ def main():
         include_package_data=True,
         packages=['pycrtm_'],
         py_modules=['crtm_io', 'pyCRTM'],
-        package_data={'pyCRTM':['pyCRTM/setup.txt']})
+        zip_safe = False,)
     
-    os.remove('MANIFEST.in')
     #os.remove('pycrtm.F90')
 def readSetup(setup_file, scriptDir):
     cfg = configparser.ConfigParser()

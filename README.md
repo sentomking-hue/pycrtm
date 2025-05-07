@@ -14,7 +14,7 @@ This `README` has 4 parts:
 3. Importing -- how to use this library in a project.
 4. Using the interface -- HOWTO/run through on how to use this interface
 
-- Bryan Karpowicz -- April 2, 2025
+- Bryan Karpowicz -- May 7, 2025
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
@@ -44,30 +44,16 @@ path_used =  /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/pycr
 ```
 Next, pycrtm must have a location where all desired coefficients are expanded in a flat directory. In the configuration above, the installer will create `path_used` and populate it with symbolic links to all available coefficients in `source_path.` If `link_from_source_to_path_used` is set to `False`, `source_path` will be ignored and it is assumed the user has placed coefficients in `path_used` and pyCRTM will search for coefficients in this directory. 
 - Installation 
-There are two recommended ways to install. The first, if the user has full write access to their python distribution, it may be installed globally using:
+If the user has full write access to their python distribution, it may be installed globally using:
 ```
-python3 setup.py install 
+pip install .
 ```
-This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against th crtm library.
+Otherwise, the standard --user option is also available which will install under $HOME/.local/
+```
+pip install . --user
+```
+Optionally, you may supply "-v" for a more verbose output while it is installing. Either way, this will take some time as it will symlink coefficients downloaded when you install CRTM, compile the pycrtm module, and link against th crtm library.
 
-The second, if the user doesn't have full write access to their python distribution is to first build a wheel, and install using pip:
-```
-python3 setup.py bdist_wheel
-```
-This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against the crtm library. Once the wheel has been built, it may be installed locally using pip:
-```
-pip install dist/pyCRTM_JCSDA*.whl --target /discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/
-```
-paired with appending `/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/` to the `PYTHONPATH` environment variable in your .bashrc or .cshrc.
-
-For Bash this is:
-```
-export PYTHONPATH="${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/"
-```
-For Tcsh/csh:
-```
-setenv PYTHONPATH ${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules
-```
 
 Compiler options are handled autmoatically through cmake. On HPC systems this means loading the right set of modules. For example, if you would like pycrtm compiled with intel, you would load the same intel modules you used to build crtm. 
 

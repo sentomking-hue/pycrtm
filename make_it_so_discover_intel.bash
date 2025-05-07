@@ -56,7 +56,9 @@ printf "# source specify coefficient directory will grab little endian binary co
 printf "source_path =${CHECKOUT_PATH}/CRTMv3/build/test_data/\n" >> setup.cfg 
 printf "# path used by pycrtm to read coefficients\n" >> setup.cfg 
 printf "path_used =${CHECKOUT_PATH}/crtm_coefficients\n" >> setup.cfg 
-python3 setup.py install
+
+pip install .
+
 conda env config vars set LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 cd testCases
 python3 test_atms.py 
