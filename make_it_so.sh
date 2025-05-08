@@ -24,14 +24,20 @@ elif [[ ${SEL} == 'linux' ]]; then
     conda init --all
 elif [[ ${SEL} == 'skip' ]]; then
     echo "Skipping miniconda install. Already installed."    
+    if [[ -f "$HOME/miniconda3/bin/activate" ]]; then
+        source $HOME/miniconda3/bin/activate
+    fi
 else
     echo "Unknown platform selected:${1}"
 	exit 1
 fi
 export CONDA_VENV='pycrtm'
-conda create --name ${CONDA_VENV} python scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson  cmake git git-lfs matplotlib
-conda init
+conda create --name ${CONDA_VENV} python scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson cmake git git-lfs matplotlib
+
 conda activate ${CONDA_VENV}
+conda init
+
+echo $CONDA_PREFIX
 
 export PWDOLD=${PWD}
 export CHECKOUT_PATH="${PWD}/ext"
