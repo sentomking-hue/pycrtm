@@ -31,6 +31,10 @@ else
     echo "Unknown platform selected:${1}"
 	exit 1
 fi
+
+# Add conda-forge, necessary to get netcdf-fortran
+conda config --add channels conda-forge
+
 export CONDA_VENV='pycrtm'
 conda create --name ${CONDA_VENV} python scikit-build h5py netcdf4 gfortran libnetcdf netcdf-fortran meson cmake git git-lfs matplotlib
 
