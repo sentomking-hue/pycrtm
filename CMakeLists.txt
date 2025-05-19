@@ -51,6 +51,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -m ${f2py_module_name}
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
     COMMAND python -m numpy.f2py
+      --fcompiler=${switch_fun}
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
@@ -76,6 +77,7 @@ else()
       -m ${f2py_module_name}
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
     COMMAND python -m numpy.f2py
+      --fcompiler=${switch_fun}
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
