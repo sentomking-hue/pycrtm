@@ -7,18 +7,18 @@ def findLib(thisDir):
     """
     cfg = configparser.ConfigParser()
     if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
-        pycrtm_setup_dir = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
+        pycrtm_setup = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
     else:
         print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
         sys.exit()
-    cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
+    cfg.read( pycrtm_setup )
     setupdir = cfg['Setup']['crtm_install']
     if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
         libdir = os.path.join( setupdir, 'lib')
     elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
         libdir = os.path.join( setupdir, 'lib64')
     else:
-        libdir = os.path.join(setupdir,'') 
+        libdir = os.path.join(setupdir,'')
     so = glob.glob(os.path.join(libdir,'*.so'))
     if(len(so)>0):
         return libdir
@@ -64,7 +64,7 @@ def setLD_LIBRARY_PATH(libdir):
             os.execv(sys.argv[0], sys.argv)
     elif(len(libdir)>0):
         os.environ["LD_LIBRARY_PATH"] = libdir
-        #os.execv(sys.argv[0], sys.argv)
+        os.execv(sys.argv[0], sys.argv)
 
 def setDYLD_LIBRARY_PATH(libdir):
     """
