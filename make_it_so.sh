@@ -98,10 +98,25 @@ fi
 
 mkdir build 
 cd build
-cmake -DBUILD_SHARED_LIBS=OFF ../
-make -j8 
-make install 
-ctest -j8 
+
+if [[ ${CRTM_VERSION} == "2.x" ]]; then
+  ecbuild ../
+  make -j8 
+  ctest -j8
+  cd lib
+  rm libcrtm.*
+  mv libcrtm_static.a libcrtm.a
+fi
+ 
+
+
+if [[ ${CRTM_VERSION} == "3.x" ]]; then
+  cmake -DBUILD_SHARED_LIBS=OFF ../
+  make -j8 
+  make install 
+  ctest -j8
+fi
+ 
 
 cd ${PYCRTM_PATH}
 #git clone git@github.com:JCSDA/pycrtm.git
@@ -122,7 +137,7 @@ printf "[Coefficients]\n" >> setup.cfg
 printf "# source specify coefficient directory will grab little endian binary coefficients and netcdf and link them to path_used\n">>setup.cfg
 
 if [[ ${CRTM_VERSION} == "2.x" ]]; then
-  printf "source_path =${CHECKOUT_PATH}/crtm/fix/\n" >> setup.cfg 
+  printf "source_path =${CHECKOUT_PATH}/crtm/build/test_data/\n" >> setup.cfg 
 fi
 
 if [[ ${CRTM_VERSION} == "3.x" ]]; then
