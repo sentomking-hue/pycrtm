@@ -132,7 +132,7 @@ fi
 printf "# path used by pycrtm to read coefficients\n" >> setup.cfg 
 printf "path_used =${CHECKOUT_PATH}/crtm_coefficients\n" >> setup.cfg 
 
-pip install . -v
+pip install . 
 
 cd testCases
 if [[ $SEL == 'apple_intel' ]]; then
