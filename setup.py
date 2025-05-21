@@ -8,13 +8,7 @@ def main():
     
     #path of this file.
     scriptDir = os.path.split(os.path.abspath(__file__))[0]
-    #add .F90 symlink to keep history of pycrtm.f90 
-    if( not os.path.exists( os.path.join(scriptDir,'pycrtm.F90'))):
-        os.symlink(os.path.join(scriptDir,'pycrtm.f90'),os.path.join(scriptDir,'pycrtm.F90'))
-    if('darwin' in sys.platform):
-        os.environ['PYCRTM_SFX']='f90'
-    else:
-        os.environ['PYCRTM_SFX']='F90'
+
     #read configuration
     coef_path, coef_dest, crtm_install, link_coef = readSetup('setup.cfg',scriptDir)
     if(link_coef):

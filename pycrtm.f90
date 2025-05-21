@@ -143,13 +143,17 @@ SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subse
                         Load_AerosolCoeff = aerosolsOn, &
                         CloudCoeff_Format = cld_nc,&
                         AerosolCoeff_Format = aer_nc,&
+#ifdef PYCRTM_ACTIVE
                         SpcCoeff_Format = coef_nc,&
                         TauCoeff_Format = coef_nc,&
+#endif
                         CloudCoeff_File = CloudCoeff_File, &  
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
                         MWwaterCoeff_File = MWwaterCoeff_File, & 
                         Quiet=.True. )
+
+
   CALL check_allocate_status(err_stat,'Error Initializing CRTM')
   IF(subset_on) then
      err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &
@@ -1363,13 +1367,14 @@ SUBROUTINE wrap_k_matrix_active( coefficientPath, sensor_id_in, channel_subset, 
                         CloudCoeff_Format = cld_nc,&
                         AerosolCoeff_Format = aer_nc,&
                         CloudCoeff_File = CloudCoeff_File, &
+#ifdef PYCRTM_ACTIVE 
                         SpcCoeff_Format = coef_nc,&
-                        TauCoeff_Format = coef_nc,&  
+                        TauCoeff_Format = coef_nc,&
+#endif
                         AerosolCoeff_File = AerosolCoeff_File, &
                         IRwaterCoeff_File = IRwaterCoeff_File, & 
                         MWwaterCoeff_File = MWwaterCoeff_File, & 
                         Quiet=.True. )
- 
   CALL check_allocate_status(err_stat, 'Error initializing CRTM')
   IF(subset_on) then
       err_stat = CRTM_ChannelInfo_Subset( chinfo(1)  , &

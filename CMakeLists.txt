@@ -31,20 +31,21 @@ endif()
 if ("${CMAKE_Fortran_COMPILER_ID}" MATCHES "Intel")
     set(ompFlag "-liomp5")
     set(switch_fun "intelem")
+    set(preproc "-fpp")
 else()
     set(ompFlag "-lgomp")
     set(switch_fun "gfortran")
+    set(preproc "-cpp")
 endif()
-set(pycrtm_sfx $ENV{PYCRTM_SFX})
-set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.${pycrtm_sfx}")
 set(f2py_module_name "pycrtm_")
+set(fortran_src_file "${CMAKE_CURRENT_SOURCE_DIR}/pycrtm.f90")
 set(generated_module_file ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}${PYTHON_EXTENSION_MODULE_SUFFIX})
 #_dumb is used to avoid circular dependency which breaks Ninja.
 add_custom_target(${f2py_module_name}_dumb ALL
   DEPENDS ${generated_module_file}
   )
 if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_Fortran_COMPILER_VERSION}/crtm_active_sensor.mod)
-
+  set(preproc "${preproc} -DPYCRTM_ACTIVE")
   add_custom_command(
     OUTPUT ${generated_module_file}
     COMMAND python -m numpy.f2py
@@ -52,6 +53,7 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -h ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf ${fortran_src_file}
     COMMAND python -m numpy.f2py
       --fcompiler=${switch_fun}
+      --f90flags=${preproc} 
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
@@ -62,7 +64,8 @@ if (EXISTS $ENV{CRTM_INSTALL}/module/crtm/${CMAKE_Fortran_COMPILER_ID}/${CMAKE_F
       -lcrtm
       -lnetcdff
       ${ompFlag}
-      -DPYCRTM_ACTIVE
+# should work according to f2py documentation but doesn't. Have to set it through --f90flags as above.
+#      -DPYCRTM_ACTIVE
       only: 
       wrap_forward 
       wrap_k_matrix
@@ -81,6 +84,7 @@ else()
       -c
       ${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}.pyf 
       ${fortran_src_file}
+      --f90flags=${preproc} 
       -I${crtm_INCLUDE}
       -I${NETCDF_FORTRAN_INCLUDE_DIRS}
       -L${CDF_LIB_PATH}
