@@ -57,9 +57,11 @@ echo ${PWD}
 if [[ ${CRTM_VERSION} == "2.x" ]]; then
   git clone https://github.com/ecmwf/ecbuild
   export PATH=${PWD}/ecbuild/bin:$PATH
+  git lfs install --skip-smudge
   git clone https://github.com/JCSDA/crtm/
   cd crtm
   git checkout v2.4.1-jedi.1
+  git lfs pull
 fi
 
 if [[ ${CRTM_VERSION} == "3.x" ]]; then
