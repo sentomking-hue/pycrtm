@@ -1,4 +1,4 @@
-import os, sys, configparser, shutil, time
+import os, sys, configparser, shutil, time, glob
 import setuptools
 from skbuild import setup
 def main():
@@ -74,7 +74,34 @@ def linkCoef(coefDir,coefDest):
         print("Warning! Linked zero coefficients!")
         time.sleep(30)
     else:
-        print("Linked {:d} Coefficients.".format(coefCnt)) 
+        print("Linked {:d} Coefficients.".format(coefCnt))
+    print ("Checking for missing ODAS only coefficients.") 
+    SpcCoeffNc = glob.glob(os.path.join(coefDest,'*SpcCoeff*.nc'))
+    SpcCoeffBin = glob.glob(os.path.join(coefDest,'*SpcCoeff*.bin'))
+    missingTau = []
+    for c in SpcCoeffNc:
+        if(not os.path.exists(c.replace('SpcCoeff','TauCoeff'))):
+            cc = os.path.split(c.replace('SpcCoeff','TauCoeff'))[-1]
+            missingTau.append(cc)
+    for c in SpcCoeffBin:
+        if(not os.path.exists(c.replace('SpcCoeff','TauCoeff'))):
+            cc = os.path.split(c.replace('SpcCoeff','TauCoeff'))[-1]
+            missingTau.append(cc)
+    toLink = [] 
+    filesPresent = []
+    for root,dirs,filez in os.walk(searchPath):
+        for name in filez:
+            srcPath = os.path.join(root,name)
+            if(not ('ODPS' in srcPath or 'Big_Endian' in srcPath)):
+                curF = os.path.split(srcPath)[1]
+                if (curF in missingTau and curF not in filesPresent):
+                    toLink.append(srcPath)
+                    filesPresent.append(curF)
+    for l in toLink:
+        os.symlink(l, os.path.join(coefDest,os.path.split(l)[1]))
+        coefCnt+=1
+
+    print("Linked {:d} Coefficients.".format(coefCnt)) 
     time.sleep(10)
 if __name__ == "__main__":
     main()
