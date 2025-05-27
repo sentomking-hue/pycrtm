@@ -200,6 +200,7 @@ SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subse
   CALL check_allocate_status(alloc_stat, "Error allocating geometry.")
   ALLOCATE( options(N_Profiles), STAT = alloc_stat )
   CALL check_allocate_status(alloc_stat, "Error allocating options.")
+  CALL crtm_options_create( options, nChan )
 
   CALL CRTM_Atmosphere_Create( atm, N_LAYERS, N_trace, N_CLOUDS_crtm, N_AEROSOLS_crtm )
   CALL check_LOGICAL_status(ANY(.not. CRTM_Atmosphere_Associated(atm) ), "Failed in CRTM_Atmopsphere_Create")
@@ -251,7 +252,6 @@ SUBROUTINE wrap_forward( coefficientPath, Algorithm, sensor_id_in, channel_subse
   CALL crtm_rtsolution_create( rts, n_layers )
   CALL check_LOGICAL_status( any(.not. crtm_rtsolution_associated( rts ) ),'rts failed to create.') 
 
-  CALL crtm_options_create( options, nChan )
 
   options%RT_Algorithm_ID = Algorithm
 
@@ -532,6 +532,8 @@ SUBROUTINE wrap_k_matrix( coefficientPath, Algorithm, sensor_id_in, channel_subs
 
   allocate(options(N_profiles), STAT = alloc_stat)
   CALL check_allocate_status(alloc_stat,'Error allocating Options')
+  CALL crtm_options_create( options, nChan )
+  CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create' )
 
   ALLOCATE( rts( n_channels, N_profiles), STAT = alloc_stat )
   CALL check_allocate_status(alloc_stat,'Error allocating rts')
@@ -629,8 +631,6 @@ SUBROUTINE wrap_k_matrix( coefficientPath, Algorithm, sensor_id_in, channel_subs
   !
   ! 8b. The K-matrix model
   ! ----------------------
-  CALL crtm_options_create( options, nChan )
-  CALL check_LOGICAL_status( any(.not. crtm_options_associated( options ) ),'options failed to create' )
 
   options%RT_Algorithm_ID = Algorithm
 
