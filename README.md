@@ -33,14 +33,15 @@ If that doesn't suit your taste, read on for a more step-by-step approach.
 - Configuration
 First modify `setup.cfg` to point to the crtm install location (path underneath should contain one of the following: `lib/libcrtm.a`,`lib64/libcrtm.a`, `lib/libcrtm.so`, or `lib64/libcrtm.so`). 
 ```
-# Specify the location of the crtm install (ecbuild install ONLY)
-crtm_install = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/
+[Setup]
+# Specify the location of the crtm install
+crtm_install =/Users/karpob/pycrtm/ext/CRTMv3/build/
 link_from_source_to_path_used = True
 [Coefficients]
 # source specify coefficient directory will grab little endian binary coefficients and netcdf and link them to path_used
-source_path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/test_data/
-# path used by pycrtm to read coefficients 
-path_used =  /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/pycrtmV3cmake/coefficients
+source_path =/Users/karpob/pycrtm/ext/CRTMv3/build/test_data/
+# path used by pycrtm to read coefficients
+path_used =/Users/karpob/pycrtm/ext/crtm_coefficients
 ```
 Next, pycrtm must have a location where all desired coefficients are expanded in a flat directory. In the configuration above, the installer will create `path_used` and populate it with symbolic links to all available coefficients in `source_path.` If `link_from_source_to_path_used` is set to `False`, `source_path` will be ignored and it is assumed the user has placed coefficients in `path_used` and pyCRTM will search for coefficients in this directory. 
 - Installation 
