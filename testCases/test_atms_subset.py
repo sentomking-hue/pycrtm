@@ -2,6 +2,14 @@
 import os, h5py, sys 
 import numpy as np
 from matplotlib import pyplot as plt
+if(not os.environ.get("OMP_NUM_THREADS")):
+    print('setting OMP_NUM_THREADS to 1')
+    os.environ['OMP_NUM_THREADS']='1'
+    os.execv(sys.argv[0], sys.argv)
+if(int(os.environ['OMP_NUM_THREADS'])>1):
+    print('setting OMP_NUM_THREADS to 1 to keep k_matrix from breaking in 3.x')
+    os.environ['OMP_NUM_THREADS']='1'
+    os.execv(sys.argv[0], sys.argv)
 from pyCRTM import pyCRTM, profilesCreate
  
 def main(sensor_id):
@@ -59,7 +67,6 @@ def main(sensor_id):
     crtmOb.profiles = profiles
     crtmOb.sensor_id = sensor_id
     crtmOb.nThreads = 1
-
     crtmOb.loadInst()
     # crtm inst must be loaded first before specifying channel subset
     crtmOb.channelSubset = sub
