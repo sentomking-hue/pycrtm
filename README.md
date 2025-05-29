@@ -22,7 +22,7 @@ For a quicker install experience users may choose to install using the `make_it_
 ```
 ./make_it_so.sh apple_silicon 
 ```
-The script will install miniconda3, CRTMv3, pyCRTM, and run the `test_atms.py` script to verify pyCRTM is working. If you already have miniconda on your machine you can simply run `skip` which will just install CRTMv3, pyCRTM and run the `test_atms.py` script to verify pyCRTM has been installed and is functioning properly. Once installed a user may use the new `pycrtm` conda environment by typing:
+The script will install miniconda3, CRTMv3, pyCRTM, and run the `test_atms.py` script to verify pyCRTM is working. If you already have miniconda on your machine you can simply run `skip_install` which will just install a pycrtm miniconda environment, CRTMv3, pyCRTM and run the `test_atms.py` script to verify pyCRTM has been installed and is functioning properly. Once installed a user may use the new `pycrtm` conda environment by typing:
 ```
 conda activate pycrtm
 ```
