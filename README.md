@@ -134,7 +134,7 @@ brightnessTemperature = crtmOb.Bt
 #Transmission (to compute weighting functions) ( nprofiles, nchan, nlayers)
 Tau = crtmOb.TauLevels 
 
-#Temperature, Water Vapo[u]r, and Ozone Jacobians ( npforfiles, nchan, nlayers)
+#Temperature, Water Vapo[u]r, and Ozone Jacobians ( nprofiles, nchan, nlayers)
 O3_Jacobian = crtmOb.O3K
 Water_Vapor_Jacobian = crtmOb.QK
 Temperature_Jacobian = crtmOb.TK
