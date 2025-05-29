@@ -38,7 +38,7 @@ crtm_install = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CR
 link_from_source_to_path_used = True
 [Coefficients]
 # source specify coefficient directory will grab little endian binary coefficients and netcdf and link them to path_used
-source_path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/test_data/crtm
+source_path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/CRTMv3Cmake_gnu/build/test_data/
 # path used by pycrtm to read coefficients 
 path_used =  /discover/nobackup/projects/gmao/obsdev/bkarpowi/pycrtm_builds/pycrtmV3cmake/coefficients
 ```
