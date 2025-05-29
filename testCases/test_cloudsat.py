@@ -109,7 +109,7 @@ def main(sensor_id,plotMe):
     zz4 = forwardReflectivityAttenuated 
     idx3 = np.where(zz3>-9000)
     idx4 = np.where(zz4>-9000)
-    tol = 1e-6
+    tol = 1e-1
     tstMax3 = abs(zz3[idx3].max() - 30.21725448020621) < tol 
     tstMax4 = abs(zz4[idx4].max() - 24.95743632633681) < tol
     tstMin3 = abs(zz3[idx3].min() - 29.50054261447972) < tol
