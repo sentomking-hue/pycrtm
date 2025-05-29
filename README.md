@@ -109,7 +109,6 @@ Once initialized, the user will need to provide values for the desired profiles 
 
 ```Python
 crtmOb = pyCRTM()
-crtmOb.coefficientPath = pathInfo['CRTM']['coeffs_dir']
 crtmOb.sensor_id = sensor_id
 crtmOb.nThreads = 4
 crtmOb.profiles = profiles
