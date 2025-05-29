@@ -137,7 +137,7 @@ Tau = crtmOb.TauLevels
 #Temperature, Water Vapo[u]r, and Ozone Jacobians ( npforfiles, nchan, nlayers)
 O3_Jacobian = crtmOb.O3K
 Water_Vapor_Jacobian = crtmOb.QK
-Temperature_Jacobian = crtm.TK
+Temperature_Jacobian = crtmOb.TK
 
 #Emissivity (nprofiles, nchan)
 Emissivity = crtmOb.surfEmisRefl
