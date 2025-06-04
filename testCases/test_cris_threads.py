@@ -13,8 +13,10 @@ def main(sensor_id):
         for c in casesIn:
             cases.append(c)
     # create 4 profiles for each of the 4 cases
-    profiles = profilesCreate( len(cases), 92 )
+    ncases = len(cases)
+    profiles = profilesCreate( ncases, 92 )
     storedTb = []
+    storedTbv3 = []
     storedEmis = []
     print("Running {} cases.".format(len(cases)))
     # populate the cases, and previously calculated Tb from crtm test program.    
@@ -55,13 +57,14 @@ def main(sensor_id):
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
         storedTb.append(np.asarray(h5['Tb_cris']))
+        storedTbv3.append(np.asarray(h5['Tb_cris_v3']))
         storedEmis.append(np.asarray(h5['emissivity_cris']))
         h5.close()
 
     crtmOb = pyCRTM()
     crtmOb.profiles = profiles
     crtmOb.sensor_id = sensor_id
-    crtmOb.nThreads = 10
+    crtmOb.nThreads = 5
 
     crtmOb.loadInst()
 
@@ -76,15 +79,21 @@ def main(sensor_id):
 
     if ( all( np.abs( forwardTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5) ):
         print("Yay! all values are close enough to what CRTM test program produced!")
+
+    elif ( all( np.abs( forwardTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5) ):
+        print("Yay! all values are close enough to what CRTMv3 test program produced!")
     else: 
         print("Boo! something failed. Look at cris plots")
         
-        wavenumbers = np.zeros([4,1305])
+        wavenumbers = np.zeros([ncases,1305])
         wavenumbers[0:4,:] = np.linspace(1,1306,1305)
         
         plt.figure()
-        plt.plot(wavenumbers.T,forwardTb.T-np.asarray(storedTb).T ) 
-        plt.legend(['1','2','3','4'])
+        plt.plot(wavenumbers.T,forwardTb.T-np.asarray(storedTb).T )
+        caseLabels = []
+        for icnt in range(0,ncases):
+            caseLabels.append('{}'.format(icnt+1) )
+        plt.legend(caseLabels)
         plt.savefig(os.path.join(thisDir,'cris'+'_spectrum_forward.png'))
         plt.figure()
         plt.plot(wavenumbers.T,forwardEmissivity.T-np.asarray(storedEmis).T)

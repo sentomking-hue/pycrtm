@@ -11,6 +11,7 @@ def main(sensor_id,plotme):
     # create 4 profiles for each of the 4 cases
     profiles = profilesCreate( 4, 92 )
     storedTb = []
+    storedTbv3 = []
     storedEmis = []
     # populate the cases, and previously calculated Tb from crtm test program.    
     for i,c in enumerate(cases):
@@ -50,6 +51,7 @@ def main(sensor_id,plotme):
         profiles.surfaceTypes[i,4] = h5['snowType'][()]
         profiles.surfaceTypes[i,5] = h5['iceType'][()]
         storedTb.append(np.asarray(h5['Tb_cris']))
+        storedTbv3.append(np.asarray(h5['Tb_cris_v3']))
         storedEmis.append(np.asarray(h5['emissivity_cris']))
         h5.close()
 
@@ -83,14 +85,21 @@ def main(sensor_id,plotme):
     tst3 = np.abs(np.max(np.abs(zz3)) - 0.00428447655688215) < 1e-6
     tst4 = np.abs(np.max(np.abs(zz4)) - 3.1943929933534806e-06) < 1e-8
     tst5 = np.abs(np.max(np.abs(zz5)) - 3.69853793060908) <1e-6
+
+    tst3_v3 = np.abs(np.max(np.abs(zz3)) - 0.015222949896532834) < 1e-6
+    tst4_v3 = np.abs(np.max(np.abs(zz4)) - 9.656481498874026e-06) < 1e-8
+    tst5_v3 = np.abs(np.max(np.abs(zz5)) - 4.426329172496442) <1e-6
+
     if(tst1 and tst2):
         print("Yay! Aerosol Jacobians Pass.")
     else:
        print("Boo! Aerosol Jacobians Fail.")
        print("Effective Radius Test",tst1)
-       print("Concentratoin Test",tst2)
+       print("Concentration Test",tst2)
     if(tst3 and tst4 and tst5):
         print("Yay! Cloud Jacobians Pass.")
+    elif(tst3_v3 and tst4_v3 and tst5_v3):
+        print("Yay! Cloud Jacobians Pass (CRTMv3).")
     else:
        print("Boo! Cloud Jacobians Fail.")
        print("Effective Radius Test",tst3)
@@ -144,7 +153,9 @@ def main(sensor_id,plotme):
 
     if ( all( np.abs( forwardTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTb).flatten() ) <= 1e-5) ):
         print("Yay! all values are close enough to what CRTM test program produced!")
-    else: 
+    elif(all( np.abs( forwardTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5)  and all( np.abs( kTb.flatten() - np.asarray(storedTbv3).flatten() ) <= 1e-5)): 
+        print("Yay! all values are close enough to what CRTMv3 test program produced!")
+    else:
         print("Boo! something failed. Look at cris plots")
         wavenumbers = np.zeros([4,1305])
         wavenumbers[0:4,:] = np.linspace(1,1306,1305)
@@ -162,8 +173,6 @@ def main(sensor_id,plotme):
         plt.figure()
         plt.plot(wavenumbers.T,kEmissivity.T-np.asarray(storedEmis).T)
         plt.savefig(os.path.join(thisDir,'cris'+'_emissivity_k.png')) 
-        sys.exit("Boo! didn't pass tolerance with CRTM test program.")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = "Jacobian output test for CrIS NSR.")

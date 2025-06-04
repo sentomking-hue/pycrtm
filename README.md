@@ -2,7 +2,7 @@
 
 ## Bryan M. Karpowicz, Ph.D. - USRA/GESTAR/NASA 610.1 Global Modeling and Assimilation Office, with Contributions from Patrick Stegmann, Dr.-Ing. - JCSDA
 
-This is a basic python interface to CRTM v2.4.0. 
+This is a basic python interface to CRTM v2.4.x or CRTMv3. 
 
 The user interface is designed to be very similar to the python RTTOV interface. So, the user sets profiles, passes them to an object for a desired sensor, runs either the forward model/K-matrix, and pulls the brightness temperature/Jacobian/transmission/emissivity out of the object.  
 
@@ -14,57 +14,47 @@ This `README` has 4 parts:
 3. Importing -- how to use this library in a project.
 4. Using the interface -- HOWTO/run through on how to use this interface
 
-- Bryan Karpowicz -- March 20, 2021
+- Bryan Karpowicz -- May 7, 2025
 ---------------------------------------------------------------------------------------- 
 
 ## 1. Installation:
-- For the novice that doesn't care about where or how this installs, look at the crtm-bundle and run kickstart_pyCRTM.sh Otherwise...
-- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). Note crtm must be built with the static option (`ecbuild --static`) 
+For a quicker install experience users may choose to install using the `make_it_so.sh` which will install conda along with the required packages in a miniconda environment `pycrtm`. There are four options `apple_silicon` for Macs with an M2/M3/M4/M? processor, `apple_intel` to install miniconda for Macs with an intel processor, `linux` for all other linux systems, `skip_install` which will skip installing miniconda and attempt to overwrite a `pycrtm` miniconda environment, `skip_create` which will use an existing miniconda pycrtm environment, and `skip_crtm_download` which will skip downloading CRTMv3 in addition to skipping the creation of a miniconda environment. Users are cautioned to look over the script to make sure it will not overwrite existing installs, or fill up your home directory, if space is limited. For example if your system does not have a python install and you a starting from scratch on an M4 Mac simply type:
+```
+./make_it_so.sh apple_silicon 
+```
+The script will install miniconda3, CRTMv3, pyCRTM, and run the `test_atms.py` script to verify pyCRTM is working. If you already have miniconda on your machine you can simply run `skip_install` which will just install a pycrtm miniconda environment, CRTMv3, pyCRTM and run the `test_atms.py` script to verify pyCRTM has been installed and is functioning properly. Once installed a user may use the new `pycrtm` conda environment by typing:
+```
+conda activate pycrtm
+```
+
+If that doesn't suit your taste, read on for a more step-by-step approach. 
+
+- Dependencies CRTM, h5py, numpy and scikit-build (install those first, if you don't have them). 
 - Configuration
-First modify `setup.cfg` to point to the crtm install location (path underneath should contain `lib/libcrtm.a`). 
+First modify `setup.cfg` to point to the crtm install location (path underneath should contain one of the following: `lib/libcrtm.a`,`lib64/libcrtm.a`, `lib/libcrtm.so`, or `lib64/libcrtm.so`). 
 ```
 [Setup]
-# Specify the location of the crtm install (ecbuild install ONLY)
-crtm_install = /discover/nobackup/bkarpowi/github/JCSDA_crtm/crtm-bundle/crtm/build
-# Download Coefficients
-# Controls whether coefficients are downloaded
-download = True
-#This will move the coefficients with the package install.
-coef_with_install = True
+# Specify the location of the crtm install
+crtm_install =/Users/karpob/pycrtm/ext/CRTMv3/build/
+link_from_source_to_path_used = True
 [Coefficients]
-# Use to specify alternative coefficient file location where Little Endian Coefficient files are stored.
-# If user desires coefficients to be stored with the installed package, leave this alone.
-# If user selects coef_with_install = False, this must be specified.
-# set argument below (path) to the full path of the coefficients.
-path = /discover/nobackup/projects/gmao/obsdev/bkarpowi/tstCoef/
+# source specify coefficient directory will grab little endian binary coefficients and netcdf and link them to path_used
+source_path =/Users/karpob/pycrtm/ext/CRTMv3/build/test_data/
+# path used by pycrtm to read coefficients
+path_used =/Users/karpob/pycrtm/ext/crtm_coefficients
 ```
-In the example above the coefficients will be included with the pycrtm install. To change this, set `coef_with_install` and set `path` to the location where you would like crtm coefficients stored. If you already have a directory with coefficients, you can set `download` and `coef_with_install` to False, and set `path` to that location. The pycrtm configuration will then point to the location in `path`.  
-
+Next, pycrtm must have a location where all desired coefficients are expanded in a flat directory. In the configuration above, the installer will create `path_used` and populate it with symbolic links to all available coefficients in `source_path.` If `link_from_source_to_path_used` is set to `False`, `source_path` will be ignored and it is assumed the user has placed coefficients in `path_used` and pyCRTM will search for coefficients in this directory. 
 - Installation 
-There are two recommended ways to install. The first, if the user has full write access to their python distribution, it may be installed globally using:
+If the user has full write access to their python distribution, it may be installed globally using:
 ```
-python3 setup.py install 
+pip install .
 ```
-This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against th crtm library.
+Otherwise, the standard --user option is also available which will install under $HOME/.local/
+```
+pip install . --user
+```
+Optionally, you may supply "-v" for a more verbose output while it is installing. Either way, this will take some time as it will symlink coefficients downloaded when you install CRTM, compile the pycrtm module, and link against th crtm library.
 
-The second, if the user doesn't have full write access to their python distribution is to first build a wheel, and install using pip:
-```
-python3 setup.py bdist_wheel
-```
-This will take some time as it will download coefficients, move them around, compile the pycrtm module, and link against the crtm library. Once the wheel has been built, it may be installed locally using pip:
-```
-pip install dist/pyCRTM_JCSDA*.whl --target /discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/
-```
-paired with appending `/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/` to the `PYTHONPATH` environment variable in your .bashrc or .cshrc.
-
-For Bash this is:
-```
-export PYTHONPATH="${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules/"
-```
-For Tcsh/csh:
-```
-setenv PYTHONPATH ${PYTHONPATH}:/discover/nobackup/projects/gmao/obsdev/bkarpowi/pythonModules
-```
 
 Compiler options are handled autmoatically through cmake. On HPC systems this means loading the right set of modules. For example, if you would like pycrtm compiled with intel, you would load the same intel modules you used to build crtm. 
 
@@ -91,6 +81,17 @@ The following scripts will run CRTM without aerosols or clouds:
 For those Jupyter notebook fans, there is even Jupyter notebook example simulating ATMS:
 * `$PWD/testCases/test_atms.ipynb`
 
+Additonal More Advanced Examples:
+* `$PWD/testCases/test_atms_jacobian.py` Provides cloud jacobians (provide --plot command line argument to generate plot)
+* `$PWD/testCases/test_atms_subset_cloudnames.py` Provides example of using a channel subset, along with Cloud type names.
+* `$PWD/testCases/test_atms_subset.py` Provides exmaple using a channel subset.
+* `$PWD/testCases/test_cris_jacobian.py` Provides cloud/aerosol jacobians (provide --plot command line argument to generate plot)
+* `$PWD/testCases/test_cris_subset.py` Provides exmaple using a channel subset.
+
+Active Sensor Examples (Available with CRTMv3.1.x)
+* `$PWD/testCases/test_cloudsat.py` tests forward model of active sensor (provide --plot for plot of reflectivity/attenuated reflectivity)
+* `$PWD/testCases/test_cloudsat_jacobian.py` tests cloud jacobians (provide --plot for cloud jacobian plot, --attenuated for attenuated reflectivity, otherwise jacobians of reflectivity are plotted.
+
 ## 3. Importing 
 
 ```Python
@@ -108,7 +109,6 @@ Once initialized, the user will need to provide values for the desired profiles 
 
 ```Python
 crtmOb = pyCRTM()
-crtmOb.coefficientPath = pathInfo['CRTM']['coeffs_dir']
 crtmOb.sensor_id = sensor_id
 crtmOb.nThreads = 4
 crtmOb.profiles = profiles
@@ -134,10 +134,10 @@ brightnessTemperature = crtmOb.Bt
 #Transmission (to compute weighting functions) ( nprofiles, nchan, nlayers)
 Tau = crtmOb.TauLevels 
 
-#Temperature, Water Vapo[u]r, and Ozone Jacobians ( npforfiles, nchan, nlayers)
+#Temperature, Water Vapo[u]r, and Ozone Jacobians ( nprofiles, nchan, nlayers)
 O3_Jacobian = crtmOb.O3K
 Water_Vapor_Jacobian = crtmOb.QK
-Temperature_Jacobian = crtm.TK
+Temperature_Jacobian = crtmOb.TK
 
 #Emissivity (nprofiles, nchan)
 Emissivity = crtmOb.surfEmisRefl

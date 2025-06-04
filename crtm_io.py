@@ -1,4 +1,92 @@
-import os, struct, configparser 
+import os, sys, glob, struct, configparser,netCDF4
+import numpy as np 
+def findLib(thisDir):
+    """
+    Find crtm library and check for shared library *.so. If so is found, return
+    library path, otherwise return nothing to use static library.
+    """
+    cfg = configparser.ConfigParser()
+    if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
+        pycrtm_setup = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
+    else:
+        print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
+        sys.exit()
+    cfg.read( pycrtm_setup )
+    setupdir = cfg['Setup']['crtm_install']
+    if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
+        libdir = os.path.join( setupdir, 'lib')
+    elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
+        libdir = os.path.join( setupdir, 'lib64')
+    else:
+        libdir = os.path.join(setupdir,'')
+    so = glob.glob(os.path.join(libdir,'*.so'))
+    if(len(so)>0):
+        return libdir
+    else:
+        return ""
+def findLibDyld(thisDir):
+    """
+    Find crtm library and check for shared library *.so. If so is found, return
+    library path, otherwise return nothing to use static library.
+    """
+    cfg = configparser.ConfigParser()
+    if ( os.path.exists( os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt') ) ):
+        pycrtm_setup_dir = os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')
+    else:
+        print("Error. File not present: {}".format(os.path.join(thisDir,'pycrtm_','pycrtm_setup.txt')))
+        sys.exit()
+    cfg.read( os.path.join(thisDir,pycrtm_setup_dir) )
+    setupdir = cfg['Setup']['crtm_install']
+    if( os.path.exists( os.path.join( setupdir, 'lib') ) ):
+        libdir = os.path.join( setupdir, 'lib')
+    elif( os.path.exists( os.path.join( setupdir, 'lib64') ) ):
+        libdir = os.path.join( setupdir, 'lib64')
+    else:
+        libdir = os.path.join(setupdir,'') 
+    so = glob.glob(os.path.join(libdir,'libcrtm.*'))
+    if(len(so)>0):
+        return libdir
+    else:
+        return ""
+
+
+
+def setLD_LIBRARY_PATH(libdir):
+    """
+    For a given path add or create LD_LIBRARY_PATH and do os.execv thing to do it in the current
+    python environment.
+    """    
+    #Set the LD_LIBRARY_PATH to make it possible to used shared object. 
+    old_ld = os.environ.get("LD_LIBRARY_PATH")
+    if old_ld:
+        if(libdir not in os.environ["LD_LIBRARY_PATH"]):
+            os.environ["LD_LIBRARY_PATH"] = old_ld + ":" + libdir
+            os.execv(sys.argv[0], sys.argv)
+    elif(len(libdir)>0):
+        os.environ["LD_LIBRARY_PATH"] = libdir
+        os.execv(sys.argv[0], sys.argv)
+
+def setDYLD_LIBRARY_PATH(libdir):
+    """
+    Warn user if dyld, that you need to set environment variable.
+    """   
+    #Set the LD_LIBRARY_PATH to make it possible to used shared object. 
+    so = glob.glob(os.path.join(libdir,'libcrtm.*')) 
+    old_ld = os.environ.get("DYLD_LIBRARY_PATH")
+    if(len(so)>0):
+        if old_ld:
+            if(libdir not in os.environ["DYLD_LIBRARY_PATH"]):
+                #os.environ["DYLD_LIBRARY_PATH"] = old_ld + ":" + libdir
+                print('set DYLD_LIBRARY_PATH!')
+                print('export DYLD_LIBRARY_PATH={}'.format(libdir))
+                os.execv(sys.argv[0], sys.argv)
+        elif(len(libdir)>0):
+            #os.environ["DYLD_LIBRARY_PATH"] = libdir
+             print('set DYLD_LIBRARY_PATH!')
+             print('export DYLD_LIBRARY_PATH={}'.format(libdir))
+             sys.exit()
+             #os.execv(sys.argv[0], sys.argv)
+
 
 def crtmLevelsToLayers( pLevels ):
     num = pLevels[1::] - pLevels[0:pLevels.shape[0]-1]
@@ -168,12 +256,14 @@ def readSpcCoeff(fname):
     n_Channels = o['n_Channels']
     f.read(8)
     # sensor information.
-    o['sensor_string'], o['sensor_type'], o['wmo_satellite_id'], o['wmo_sensor_id'] = struct.unpack('20s3i',f.read(struct.calcsize('20s3i')))
+    o['sensor_string'], o['Sensor_Type'], o['wmo_satellite_id'], o['wmo_sensor_id'] = struct.unpack('20s3i',f.read(struct.calcsize('20s3i')))
     f.read(8)
     #information we probably care about.
     fmt = '{:d}i'.format(n_Channels)
     o['Sensor_Channel'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
     o['Polarization'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
+    if(o['version']>2):
+        o['PolAngle'] = struct.unpack('{:d}d'.format(n_Channels),f.read(struct.calcsize('{:d}d'.format(n_Channels))))
     o['Channel_Flag'] = struct.unpack(fmt,f.read(struct.calcsize(fmt)))
 
     fmt = '{:d}d'.format(n_Channels)
@@ -197,6 +287,18 @@ def readSpcCoeff(fname):
     f.close()
 
     return spcCoeff
+def readSpcCoeffNc(fname):
+    """
+    Read Spectral Coefficient information from netcdf file.
+    """
+    o = {}
+    ds = netCDF4.Dataset(fname,'r')
+    for v in ds.variables:
+        o[v] = np.asarray(ds.variables[v])
+
+    for v in list(ds.ncattrs()):
+        o[v.lower()] = np.asarray(ds.getncattr(v))
+    return o
 
 if __name__ == "__main__":
     pathInfo = configparser.ConfigParser()
